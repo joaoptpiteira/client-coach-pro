@@ -14,7 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pt_clients: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          forecast: Database["public"]["Enums"]["pt_forecast"]
+          forecast_notas: string | null
+          forecast_valor: number | null
+          id: string
+          nome: string
+          notas: string | null
+          numero: number
+          owner_id: string
+          service_type: Database["public"]["Enums"]["pt_service_type"]
+          treinos_dados: number
+          treinos_pagos: number
+          updated_at: string
+          valor_acordado: number
+          valor_attivo: number
+          valor_ginasio: number
+          valor_recebido: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          forecast?: Database["public"]["Enums"]["pt_forecast"]
+          forecast_notas?: string | null
+          forecast_valor?: number | null
+          id?: string
+          nome: string
+          notas?: string | null
+          numero: number
+          owner_id: string
+          service_type?: Database["public"]["Enums"]["pt_service_type"]
+          treinos_dados?: number
+          treinos_pagos?: number
+          updated_at?: string
+          valor_acordado?: number
+          valor_attivo?: number
+          valor_ginasio?: number
+          valor_recebido?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          forecast?: Database["public"]["Enums"]["pt_forecast"]
+          forecast_notas?: string | null
+          forecast_valor?: number | null
+          id?: string
+          nome?: string
+          notas?: string | null
+          numero?: number
+          owner_id?: string
+          service_type?: Database["public"]["Enums"]["pt_service_type"]
+          treinos_dados?: number
+          treinos_pagos?: number
+          updated_at?: string
+          valor_acordado?: number
+          valor_attivo?: number
+          valor_ginasio?: number
+          valor_recebido?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +85,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      pt_forecast: "continuar" | "parar" | "indefinido"
+      pt_service_type: "mensalidade" | "pack"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +213,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      pt_forecast: ["continuar", "parar", "indefinido"],
+      pt_service_type: ["mensalidade", "pack"],
+    },
   },
 } as const
