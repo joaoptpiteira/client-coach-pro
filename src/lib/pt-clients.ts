@@ -74,14 +74,14 @@ export const FREQUENCY_LABEL: Record<number, string> = {
 
 // ---- Cálculos derivados ----
 
-/** Custo do ginásio mensal = frequência semanal × 4 × valor por treino */
-export function custoGinasioMensal(c: Pick<PtClient, "frequencia_semanal" | "valor_ginasio_por_treino">) {
-  return Number(c.frequencia_semanal ?? 0) * 4 * Number(c.valor_ginasio_por_treino ?? 0);
+/** Custo do ginásio mensal (valor fixo da mensalidade do ginásio) */
+export function custoGinasioMensal(c: Pick<PtClient, "valor_ginasio_por_treino">) {
+  return Number(c.valor_ginasio_por_treino ?? 0);
 }
 
 /** Valor real PT = valor acordado − ginásio − acompanhamento online */
 export function valorRealPT(
-  c: Pick<PtClient, "valor_acordado" | "frequencia_semanal" | "valor_ginasio_por_treino" | "valor_acompanhamento_online">,
+  c: Pick<PtClient, "valor_acordado" | "valor_ginasio_por_treino" | "valor_acompanhamento_online">,
 ) {
   return Math.max(
     0,
@@ -91,8 +91,9 @@ export function valorRealPT(
 
 /** Valor a pagar = valor real PT − desconto afiliado */
 export function valorAPagar(
-  c: Pick<PtClient, "valor_acordado" | "frequencia_semanal" | "valor_ginasio_por_treino" | "valor_acompanhamento_online" | "desconto_afiliado">,
+  c: Pick<PtClient, "valor_acordado" | "valor_ginasio_por_treino" | "valor_acompanhamento_online" | "desconto_afiliado">,
 ) {
+
   return Math.max(0, valorRealPT(c) - Number(c.desconto_afiliado ?? 0));
 }
 
