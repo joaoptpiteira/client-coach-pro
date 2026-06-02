@@ -114,9 +114,10 @@ export function PaymentDialog({ open, onOpenChange, clients, defaultMonth, defau
               </p>
               <Row label="Valor acordado" value={fmtEUR(Number(client.valor_acordado))} />
               {Number(client.valor_ginasio_por_treino) > 0 && (
-                <Row label={`− Ginásio (${client.frequencia_semanal}×4)`}
-                  value={`−${fmtEUR(Number(client.frequencia_semanal) * 4 * Number(client.valor_ginasio_por_treino))}`} />
+                <Row label="− Ginásio (mensal)"
+                  value={`−${fmtEUR(Number(client.valor_ginasio_por_treino))}`} />
               )}
+
               {Number(client.valor_acompanhamento_online) > 0 && (
                 <Row label="− Acompanhamento online" value={`−${fmtEUR(Number(client.valor_acompanhamento_online))}`} />
               )}
