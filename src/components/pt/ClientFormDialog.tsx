@@ -96,6 +96,7 @@ export function ClientFormDialog({ open, onOpenChange, client, onSaved, defaultS
   const computed = {
     valor_acordado: num(form.valor_acordado),
     valor_ginasio_por_treino: num(form.valor_ginasio_por_treino),
+    valor_acompanhamento_online: num(form.valor_acompanhamento_online),
     frequencia_semanal: num(form.frequencia_semanal),
     desconto_afiliado: num(form.desconto_afiliado),
   };
