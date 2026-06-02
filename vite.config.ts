@@ -12,4 +12,10 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Force-enable nitro with the Cloudflare Pages preset so `vite build`
+  // produces a Pages-compatible `dist/` (static assets + `_worker.js/`).
+  // Override via NITRO_PRESET env var (e.g. `cloudflare-module` for Workers).
+  nitro: {
+    preset: process.env.NITRO_PRESET ?? "cloudflare-pages",
+  },
 });
