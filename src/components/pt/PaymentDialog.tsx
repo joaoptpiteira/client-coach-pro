@@ -112,16 +112,19 @@ export function PaymentDialog({ open, onOpenChange, clients, defaultMonth, defau
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
                 Decomposição
               </p>
-              <Row label="Valor real PT" value={fmtEUR(realPT)} />
+              <Row label="Valor acordado" value={fmtEUR(Number(client.valor_acordado))} />
               {Number(client.valor_ginasio_por_treino) > 0 && (
-                <Row label={`Ginásio (${client.frequencia_semanal}×4, à parte)`}
-                  value={fmtEUR(Number(client.frequencia_semanal) * 4 * Number(client.valor_ginasio_por_treino))} />
+                <Row label={`− Ginásio (${client.frequencia_semanal}×4)`}
+                  value={`−${fmtEUR(Number(client.frequencia_semanal) * 4 * Number(client.valor_ginasio_por_treino))}`} />
               )}
               {Number(client.valor_acompanhamento_online) > 0 && (
-                <Row label="Acompanhamento online" value={fmtEUR(Number(client.valor_acompanhamento_online))} />
+                <Row label="− Acompanhamento online" value={`−${fmtEUR(Number(client.valor_acompanhamento_online))}`} />
               )}
+              <div className="pt-1.5 mt-1 border-t border-border/60">
+                <Row label="Valor real PT" value={fmtEUR(realPT)} />
+              </div>
               {Number(client.desconto_afiliado) > 0 && (
-                <Row label="Desconto afiliado" value={`−${fmtEUR(Number(client.desconto_afiliado))}`} />
+                <Row label="− Desconto afiliado" value={`−${fmtEUR(Number(client.desconto_afiliado))}`} />
               )}
               <div className="pt-1.5 mt-1 border-t border-border/60">
                 <Row label="A pagar" value={fmtEUR(aPagar)} accent />
