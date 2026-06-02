@@ -89,7 +89,7 @@ export function ForecastDialog({ open, onOpenChange, clients, onSaved }: Props) 
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium text-sm truncate">{c.nome}</span>
                   <span className="text-[11px] text-muted-foreground font-mono shrink-0">
-                    {fmtEUR(Number(c.valor_acordado))} acordado
+                    {fmtEUR(valorAPagar(c))} líquido
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
