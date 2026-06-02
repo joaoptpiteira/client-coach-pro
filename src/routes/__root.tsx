@@ -74,9 +74,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "PT Manager" },
+      { title: "João App" },
       { name: "description", content: "Gestão de clientes de personal training." },
       { name: "theme-color", content: "#0d0d0d" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "João App" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -87,6 +91,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800&family=Epilogue:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
       },
       { rel: "manifest", href: "/manifest.json" },
+      { rel: "apple-touch-icon", href: "/icon-192.png" },
+      { rel: "apple-touch-startup-image", href: "/splash.png" },
     ],
   }),
   shellComponent: RootShell,
