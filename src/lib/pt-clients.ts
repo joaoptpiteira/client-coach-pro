@@ -21,9 +21,10 @@ export async function createClient(input: Omit<PtClientInsert, "owner_id" | "num
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user?.id;
   if (!userId) throw new Error("Não autenticado");
+  // numero is auto-assigned by a database trigger when 0 is passed
   const { data, error } = await supabase
     .from("pt_clients")
-    .insert({ ...input, owner_id: userId })
+    .insert({ ...input, owner_id: userId, numero: 0 })
     .select()
     .single();
   if (error) throw error;
