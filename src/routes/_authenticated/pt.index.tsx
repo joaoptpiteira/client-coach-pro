@@ -50,7 +50,7 @@ function DashboardPage() {
   const previstoProx = ativos.reduce((s, c) => s + previsaoCliente(c), 0);
   const totalDescontos = comDesconto.reduce((s, c) => s + Number(c.desconto_afiliado || 0), 0);
 
-  const recebido = payments.reduce((s, p) => s + Number(p.valor_pago), 0);
+  const recebido = payments.reduce((s, p) => s + Number(p.valor_pt ?? p.valor_pago), 0);
   const pagosIds = new Set(payments.map((p) => p.client_id));
   const emFalta = ativos.filter((c) => !pagosIds.has(c.id));
   const falta = emFalta.reduce((s, c) => s + valorAPagar(c), 0);
