@@ -28,6 +28,8 @@ function DashboardPage() {
   const now = new Date();
   const proxMes = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const ymAtual = mesRef(now);
+  const queryClient = useQueryClient();
+  const [forecastOpen, setForecastOpen] = useState(false);
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["pt_clients"],
