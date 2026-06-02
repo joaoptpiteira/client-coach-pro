@@ -18,64 +18,170 @@ export type Database = {
         Row: {
           ativo: boolean
           created_at: string
+          desconto_afiliado: number
           forecast: Database["public"]["Enums"]["pt_forecast"]
           forecast_notas: string | null
           forecast_valor: number | null
+          frequencia_semanal: number
           id: string
+          indicado_por: string | null
+          mes_inicio: string | null
           nome: string
           notas: string | null
           numero: number
           owner_id: string
           service_type: Database["public"]["Enums"]["pt_service_type"]
+          status: Database["public"]["Enums"]["pt_client_status"]
+          telefone: string | null
           treinos_dados: number
           treinos_pagos: number
           updated_at: string
+          valor_acompanhamento_online: number
           valor_acordado: number
           valor_attivo: number
           valor_ginasio: number
+          valor_ginasio_por_treino: number
           valor_recebido: number
         }
         Insert: {
           ativo?: boolean
           created_at?: string
+          desconto_afiliado?: number
           forecast?: Database["public"]["Enums"]["pt_forecast"]
           forecast_notas?: string | null
           forecast_valor?: number | null
+          frequencia_semanal?: number
           id?: string
+          indicado_por?: string | null
+          mes_inicio?: string | null
           nome: string
           notas?: string | null
           numero: number
           owner_id: string
           service_type?: Database["public"]["Enums"]["pt_service_type"]
+          status?: Database["public"]["Enums"]["pt_client_status"]
+          telefone?: string | null
           treinos_dados?: number
           treinos_pagos?: number
           updated_at?: string
+          valor_acompanhamento_online?: number
           valor_acordado?: number
           valor_attivo?: number
           valor_ginasio?: number
+          valor_ginasio_por_treino?: number
           valor_recebido?: number
         }
         Update: {
           ativo?: boolean
           created_at?: string
+          desconto_afiliado?: number
           forecast?: Database["public"]["Enums"]["pt_forecast"]
           forecast_notas?: string | null
           forecast_valor?: number | null
+          frequencia_semanal?: number
           id?: string
+          indicado_por?: string | null
+          mes_inicio?: string | null
           nome?: string
           notas?: string | null
           numero?: number
           owner_id?: string
           service_type?: Database["public"]["Enums"]["pt_service_type"]
+          status?: Database["public"]["Enums"]["pt_client_status"]
+          telefone?: string | null
           treinos_dados?: number
           treinos_pagos?: number
           updated_at?: string
+          valor_acompanhamento_online?: number
           valor_acordado?: number
           valor_attivo?: number
           valor_ginasio?: number
+          valor_ginasio_por_treino?: number
           valor_recebido?: number
         }
         Relationships: []
+      }
+      pt_payments: {
+        Row: {
+          client_id: string
+          created_at: string
+          data: string
+          id: string
+          mes_referencia: string
+          notas: string | null
+          owner_id: string
+          updated_at: string
+          valor_pago: number
+          valor_pt: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          data?: string
+          id?: string
+          mes_referencia: string
+          notas?: string | null
+          owner_id: string
+          updated_at?: string
+          valor_pago?: number
+          valor_pt?: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          mes_referencia?: string
+          notas?: string | null
+          owner_id?: string
+          updated_at?: string
+          valor_pago?: number
+          valor_pt?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pt_trainings: {
+        Row: {
+          client_id: string
+          created_at: string
+          data: string
+          id: string
+          notas: string | null
+          owner_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          data?: string
+          id?: string
+          notas?: string | null
+          owner_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          notas?: string | null
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pt_trainings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "pt_clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -85,6 +191,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      pt_client_status: "ativo" | "antigo" | "prospect"
       pt_forecast: "continuar" | "parar" | "indefinido"
       pt_service_type: "mensalidade" | "pack"
     }
@@ -214,6 +321,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      pt_client_status: ["ativo", "antigo", "prospect"],
       pt_forecast: ["continuar", "parar", "indefinido"],
       pt_service_type: ["mensalidade", "pack"],
     },
