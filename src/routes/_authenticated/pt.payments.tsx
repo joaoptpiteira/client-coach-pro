@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ function PaymentsPage() {
   const [preselectClient, setPreselectClient] = useState<string | null>(null);
   const [trainingsDialogOpen, setTrainingsDialogOpen] = useState(false);
   const [trainingsClient, setTrainingsClient] = useState<PtClient | null>(null);
+  const qc = useQueryClient();
 
 
   const { data: clients = [] } = useQuery({ queryKey: ["pt_clients"], queryFn: listClients });
