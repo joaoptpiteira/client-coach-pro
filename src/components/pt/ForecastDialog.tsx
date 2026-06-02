@@ -106,7 +106,7 @@ export function ForecastDialog({ open, onOpenChange, clients, onSaved }: Props) 
                   </Select>
                   <Input
                     type="number" inputMode="decimal" step="0.01"
-                    placeholder={`€ ${Number(c.valor_acordado).toFixed(0)}`}
+                    placeholder={`€ ${valorAPagar(c).toFixed(0)}`}
                     value={r.forecast_valor}
                     disabled={parar}
                     onChange={(e) => setRows((s) => ({ ...s, [c.id]: { ...r, forecast_valor: e.target.value } }))}
