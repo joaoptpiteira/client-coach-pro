@@ -74,9 +74,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "Hub Pessoal" },
-      { name: "description", content: "Hub pessoal de subsistemas." },
-      { name: "theme-color", content: "#221b13" },
+      { title: "PT Manager" },
+      { name: "description", content: "Gestão de clientes de personal training." },
+      { name: "theme-color", content: "#fdfaf3" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
