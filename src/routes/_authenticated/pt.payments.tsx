@@ -165,7 +165,7 @@ function PaymentsPage() {
         open={trainingsDialogOpen}
         onOpenChange={setTrainingsDialogOpen}
         client={trainingsClient}
-        onDone={() => refetch()}
+        onDone={() => qc.invalidateQueries({ queryKey: ["pt_clients"] })}
       />
     </main>
   );
