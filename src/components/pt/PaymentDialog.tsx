@@ -112,10 +112,14 @@ export function PaymentDialog({ open, onOpenChange, clients, defaultMonth, defau
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
                 Decomposição
               </p>
-              <Row label="Acordado" value={fmtEUR(Number(client.valor_acordado))} />
-              <Row label={`Ginásio (${client.frequencia_semanal}×4)`}
-                value={`−${fmtEUR(Number(client.frequencia_semanal) * 4 * Number(client.valor_ginasio_por_treino))}`} />
               <Row label="Valor real PT" value={fmtEUR(realPT)} />
+              {Number(client.valor_ginasio_por_treino) > 0 && (
+                <Row label={`Ginásio (${client.frequencia_semanal}×4, à parte)`}
+                  value={fmtEUR(Number(client.frequencia_semanal) * 4 * Number(client.valor_ginasio_por_treino))} />
+              )}
+              {Number(client.valor_acompanhamento_online) > 0 && (
+                <Row label="Acompanhamento online" value={fmtEUR(Number(client.valor_acompanhamento_online))} />
+              )}
               {Number(client.desconto_afiliado) > 0 && (
                 <Row label="Desconto afiliado" value={`−${fmtEUR(Number(client.desconto_afiliado))}`} />
               )}
