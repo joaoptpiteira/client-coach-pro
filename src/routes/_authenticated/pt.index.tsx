@@ -194,10 +194,10 @@ interface StatProps {
 }
 function StatCard({ icon: Icon, value, label, tone = "default" }: StatProps) {
   return (
-    <Card className="p-4 bg-surface border-border">
-      <Icon className={`w-4 h-4 mb-2 ${tone === "muted" ? "text-muted-foreground" : "text-primary"}`} strokeWidth={1.75} />
-      <p className="font-display text-3xl leading-none">{value}</p>
-      <p className="text-xs text-muted-foreground mt-1">{label}</p>
+    <Card className="p-4 bg-surface border-border hover:border-primary/30 transition-colors">
+      <Icon className={`w-3.5 h-3.5 mb-3 ${tone === "muted" ? "text-muted-foreground" : "text-primary"}`} strokeWidth={1.8} />
+      <p className="font-display text-3xl leading-none font-semibold tracking-tight">{value}</p>
+      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-1.5">{label}</p>
     </Card>
   );
 }
