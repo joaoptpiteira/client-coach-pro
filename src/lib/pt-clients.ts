@@ -74,14 +74,26 @@ export const FREQUENCY_LABEL: Record<number, string> = {
 
 // ---- Cálculos derivados ----
 
-/** Valor real PT = valor acordado (já é líquido do ginásio; decomposição é informativa) */
-export function valorRealPT(c: Pick<PtClient, "valor_acordado">) {
-  return Math.max(0, Number(c.valor_acordado));
+/** Custo do ginásio mensal = frequência semanal × 4 × valor por treino */
+export function custoGinasioMensal(c: Pick<PtClient, "frequencia_semanal" | "valor_ginasio_por_treino">) {
+  return Number(c.frequencia_semanal ?? 0) * 4 * Number(c.valor_ginasio_por_treino ?? 0);
 }
 
-/** Valor a pagar com desconto de afiliado já aplicado */
-export function valorAPagar(c: Pick<PtClient, "valor_acordado" | "desconto_afiliado">) {
-  return Math.max(0, Number(c.valor_acordado) - Number(c.desconto_afiliado ?? 0));
+/** Valor real PT = valor acordado − ginásio − acompanhamento online */
+export function valorRealPT(
+  c: Pick<PtClient, "valor_acordado" | "frequencia_semanal" | "valor_ginasio_por_treino" | "valor_acompanhamento_online">,
+) {
+  return Math.max(
+    0,
+    Number(c.valor_acordado) - custoGinasioMensal(c) - Number(c.valor_acompanhamento_online ?? 0),
+  );
+}
+
+/** Valor a pagar = valor real PT − desconto afiliado */
+export function valorAPagar(
+  c: Pick<PtClient, "valor_acordado" | "frequencia_semanal" | "valor_ginasio_por_treino" | "valor_acompanhamento_online" | "desconto_afiliado">,
+) {
+  return Math.max(0, valorRealPT(c) - Number(c.desconto_afiliado ?? 0));
 }
 
 /** Previsão para próximo mês com base nas escolhas individuais */
