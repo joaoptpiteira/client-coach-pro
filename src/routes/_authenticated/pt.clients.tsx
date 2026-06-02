@@ -35,8 +35,7 @@ function ClientsPage() {
   const list = buckets[tab].filter(
     (c) =>
       c.nome.toLowerCase().includes(search.toLowerCase()) ||
-      (c.telefone ?? "").includes(search) ||
-      String(c.numero).includes(search),
+      (c.telefone ?? "").includes(search),
   );
 
   const openNew = () => { setEditing(null); setDialogOpen(true); };

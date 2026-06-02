@@ -49,9 +49,7 @@ export function ClientCard({ client: c, onClick }: Props) {
               )}
             </div>
           </div>
-          <div className="text-right shrink-0">
-            <div className="font-mono text-2xl font-semibold leading-none">#{c.numero}</div>
-          </div>
+
         </div>
       </Card>
     </button>
