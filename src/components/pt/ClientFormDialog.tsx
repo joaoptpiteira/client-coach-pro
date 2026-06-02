@@ -39,6 +39,8 @@ interface FormState {
   forecast: Forecast;
   forecast_valor: string;
   forecast_notas: string;
+  treinos_pagos: string;
+  treinos_dados: string;
 }
 
 const empty = (status: ClientStatus = "ativo"): FormState => ({
@@ -57,6 +59,8 @@ const empty = (status: ClientStatus = "ativo"): FormState => ({
   forecast: "continuar",
   forecast_valor: "",
   forecast_notas: "",
+  treinos_pagos: "0",
+  treinos_dados: "0",
 });
 
 const num = (s: string) => (s.trim() === "" ? 0 : Number(s.replace(",", ".")));
@@ -83,6 +87,8 @@ export function ClientFormDialog({ open, onOpenChange, client, onSaved, defaultS
         forecast: client.forecast,
         forecast_valor: client.forecast_valor != null ? String(client.forecast_valor) : "",
         forecast_notas: client.forecast_notas ?? "",
+        treinos_pagos: String(client.treinos_pagos ?? 0),
+        treinos_dados: String(client.treinos_dados ?? 0),
       });
     } else {
       setForm(empty(defaultStatus));
@@ -126,6 +132,8 @@ export function ClientFormDialog({ open, onOpenChange, client, onSaved, defaultS
         forecast: form.forecast,
         forecast_valor: form.forecast_valor.trim() === "" ? null : num(form.forecast_valor),
         forecast_notas: form.forecast_notas.trim() || null,
+        treinos_pagos: Math.max(0, Math.trunc(num(form.treinos_pagos))),
+        treinos_dados: Math.max(0, Math.trunc(num(form.treinos_dados))),
         // legacy fields kept to satisfy NOT NULL defaults
       };
       if (client) {
