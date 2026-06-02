@@ -1,13 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, Users, CreditCard, Package, Gift, AlertTriangle } from "lucide-react";
+import {
+  TrendingUp, TrendingDown, Users, CreditCard, Package, Gift, AlertTriangle, Dumbbell, CheckCircle2,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {
   listClients,
   type PtClient,
   fmtEUR,
   previsaoCliente,
+  valorAPagar,
 } from "@/lib/pt-clients";
+import { listPaymentsByMonth, mesRef } from "@/lib/pt-payments";
+import { listTrainingsByMonth } from "@/lib/pt-trainings";
 
 export const Route = createFileRoute("/_authenticated/pt/")({
   head: () => ({ meta: [{ title: "Dashboard · PT" }] }),
@@ -18,9 +23,21 @@ const mesNome = (d: Date) =>
   new Intl.DateTimeFormat("pt-PT", { month: "long", year: "numeric" }).format(d);
 
 function DashboardPage() {
+  const now = new Date();
+  const proxMes = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const ymAtual = mesRef(now);
+
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["pt_clients"],
     queryFn: listClients,
+  });
+  const { data: payments = [] } = useQuery({
+    queryKey: ["pt_payments", ymAtual],
+    queryFn: () => listPaymentsByMonth(ymAtual),
+  });
+  const { data: trainings = [] } = useQuery({
+    queryKey: ["pt_trainings_month", ymAtual],
+    queryFn: () => listTrainingsByMonth(ymAtual),
   });
 
   const ativos = clients.filter((c) => c.status === "ativo");
@@ -29,12 +46,14 @@ function DashboardPage() {
   const vaiParar = ativos.filter((c) => c.forecast === "parar");
   const comDesconto = ativos.filter((c) => Number(c.desconto_afiliado ?? 0) > 0);
 
-  const now = new Date();
-  const proxMes = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
-  const previstoMes = ativos.reduce((s, c) => s + Number(c.valor_acordado || 0), 0);
+  const previstoMes = ativos.reduce((s, c) => s + valorAPagar(c), 0);
   const previstoProx = ativos.reduce((s, c) => s + previsaoCliente(c), 0);
   const totalDescontos = comDesconto.reduce((s, c) => s + Number(c.desconto_afiliado || 0), 0);
+
+  const recebido = payments.reduce((s, p) => s + Number(p.valor_pago), 0);
+  const pagosIds = new Set(payments.map((p) => p.client_id));
+  const emFalta = ativos.filter((c) => !pagosIds.has(c.id));
+  const falta = emFalta.reduce((s, c) => s + valorAPagar(c), 0);
 
   if (isLoading) {
     return (
@@ -46,28 +65,29 @@ function DashboardPage() {
 
   return (
     <main className="px-5 pt-2 pb-6 space-y-5">
-      {/* Mês atual previsto */}
+      {/* Recebido mês */}
       <Card className="p-5 bg-gradient-to-br from-accent to-surface border-accent/50 shadow-sm">
         <p className="text-[11px] uppercase tracking-widest text-accent-foreground/70 font-semibold">
           {mesNome(now)}
         </p>
         <div className="flex items-baseline gap-2 mt-2">
-          <span className="font-display text-4xl text-primary">{fmtEUR(previstoMes)}</span>
-          <span className="text-xs text-muted-foreground">previstos</span>
+          <span className="font-display text-4xl text-primary">{fmtEUR(recebido)}</span>
+          <span className="text-xs text-muted-foreground">recebidos</span>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          {ativos.length} cliente{ativos.length === 1 ? "" : "s"} ativo{ativos.length === 1 ? "" : "s"}
+          de {fmtEUR(previstoMes)} previstos · {ativos.length - emFalta.length}/{ativos.length} pagos
         </p>
+        {falta > 0 && (
+          <p className="text-xs text-destructive mt-1">Falta {fmtEUR(falta)}</p>
+        )}
       </Card>
 
       {/* Previsão próximo mês */}
       <Card className="p-5 bg-surface border-border">
-        <div className="flex items-center justify-between">
-          <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold flex items-center gap-1.5">
-            <TrendingUp className="w-3 h-3 text-primary" />
-            Previsão {mesNome(proxMes).split(" ")[0]}
-          </p>
-        </div>
+        <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold flex items-center gap-1.5">
+          <TrendingUp className="w-3 h-3 text-primary" />
+          Previsão {mesNome(proxMes).split(" ")[0]}
+        </p>
         <p className="font-display text-3xl mt-1 text-foreground">{fmtEUR(previstoProx)}</p>
         {vaiParar.length > 0 && (
           <p className="text-xs text-destructive mt-1">
@@ -76,15 +96,16 @@ function DashboardPage() {
         )}
       </Card>
 
-      {/* Grid de stats */}
+      {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3">
         <StatCard icon={Users} value={ativos.length} label="Ativos" />
+        <StatCard icon={CheckCircle2} value={payments.length} label="Pagamentos" />
+        <StatCard icon={Dumbbell} value={trainings.length} label="Treinos dados" />
+        <StatCard icon={Users} value={prospects.length} label="Prospects" tone="muted" />
         <StatCard icon={CreditCard} value={ativos.filter((c) => c.service_type === "mensalidade").length} label="Mensal" />
         <StatCard icon={Package} value={ativos.filter((c) => c.service_type === "pack").length} label="Pack" />
-        <StatCard icon={Users} value={prospects.length} label="Prospects" tone="muted" />
       </div>
 
-      {/* Vai parar */}
       {vaiParar.length > 0 && (
         <Card className="p-4 bg-surface border-destructive/30">
           <p className="text-sm font-semibold text-destructive flex items-center gap-2 mb-3">
@@ -101,7 +122,6 @@ function DashboardPage() {
         </Card>
       )}
 
-      {/* Descontos afiliado */}
       {comDesconto.length > 0 && (
         <Card className="p-4 bg-surface border-border">
           <p className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
@@ -122,7 +142,6 @@ function DashboardPage() {
         </Card>
       )}
 
-      {/* Antigos */}
       {antigos.length > 0 && (
         <Card className="p-4 bg-muted/40 border-border">
           <p className="text-xs text-muted-foreground flex items-center gap-2">
@@ -159,5 +178,4 @@ function StatCard({ icon: Icon, value, label, tone = "default" }: StatProps) {
   );
 }
 
-// Re-export so unused imports don't break
 export type { PtClient };
