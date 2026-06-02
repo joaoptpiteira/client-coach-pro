@@ -68,41 +68,47 @@ function DashboardPage() {
   }
 
   return (
-    <main className="px-5 pt-2 pb-6 space-y-5">
-      {/* Recebido mês */}
-      <Card className="p-5 bg-gradient-to-br from-accent to-surface border-accent/50 shadow-sm">
-        <p className="text-[11px] uppercase tracking-widest text-accent-foreground/70 font-semibold">
-          {mesNome(now)}
-        </p>
-        <div className="flex items-baseline gap-2 mt-2">
-          <span className="font-display text-4xl text-primary">{fmtEUR(recebido)}</span>
-          <span className="text-xs text-muted-foreground">recebidos</span>
+    <main className="px-5 pt-2 pb-8 space-y-4">
+      {/* Recebido mês — hero */}
+      <Card className="relative overflow-hidden p-6 bg-surface border-border">
+        <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="relative">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-medium">
+            {mesNome(now)}
+          </p>
+          <div className="flex items-baseline gap-2 mt-3">
+            <span className="font-display text-5xl text-foreground font-semibold tracking-tight">{fmtEUR(recebido)}</span>
+          </div>
+          <div className="mt-4 h-1 w-full rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full bg-primary transition-all"
+              style={{ width: `${Math.min(100, previstoMes ? (recebido / previstoMes) * 100 : 0)}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between mt-2.5 text-[11px] text-muted-foreground">
+            <span>{ativos.length - emFalta.length}/{ativos.length} pagos · {fmtEUR(previstoMes)}</span>
+            {falta > 0 && <span className="text-destructive font-medium">−{fmtEUR(falta)}</span>}
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          de {fmtEUR(previstoMes)} previstos · {ativos.length - emFalta.length}/{ativos.length} pagos
-        </p>
-        {falta > 0 && (
-          <p className="text-xs text-destructive mt-1">Falta {fmtEUR(falta)}</p>
-        )}
       </Card>
 
       {/* Previsão próximo mês */}
-      <button onClick={() => setForecastOpen(true)} className="w-full text-left">
-        <Card className="p-5 bg-surface border-border hover:bg-surface-elevated transition-colors active:scale-[0.99]">
+      <button onClick={() => setForecastOpen(true)} className="w-full text-left group">
+        <Card className="p-5 bg-surface border-border hover:border-primary/40 transition-all active:scale-[0.99]">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold flex items-center gap-1.5">
+              <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-medium flex items-center gap-1.5">
                 <TrendingUp className="w-3 h-3 text-primary" />
-                Previsão {mesNome(proxMes).split(" ")[0]}
+                Previsão · {mesNome(proxMes).split(" ")[0]}
               </p>
-              <p className="font-display text-3xl mt-1 text-foreground">{fmtEUR(previstoProx)}</p>
+              <p className="font-display text-3xl mt-2 text-foreground font-semibold">{fmtEUR(previstoProx)}</p>
               {vaiParar.length > 0 && (
-                <p className="text-xs text-destructive mt-1">
-                  −{fmtEUR(vaiParar.reduce((s, c) => s + valorAPagar(c), 0))} de {vaiParar.length} a sair
+                <p className="text-xs text-destructive mt-1.5">
+                  −{fmtEUR(vaiParar.reduce((s, c) => s + valorAPagar(c), 0))} · {vaiParar.length} a sair
                 </p>
               )}
             </div>
-            <Pencil className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
+            <Pencil className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0 mt-1 transition-colors" />
           </div>
         </Card>
       </button>
@@ -114,12 +120,11 @@ function DashboardPage() {
         onSaved={() => queryClient.invalidateQueries({ queryKey: ["pt_clients"] })}
       />
 
-
       {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2.5">
         <StatCard icon={Users} value={ativos.length} label="Ativos" />
         <StatCard icon={CheckCircle2} value={payments.length} label="Pagamentos" />
-        <StatCard icon={Dumbbell} value={trainings.length} label="Treinos dados" />
+        <StatCard icon={Dumbbell} value={trainings.length} label="Treinos" />
         <StatCard icon={Users} value={prospects.length} label="Prospects" tone="muted" />
         <StatCard icon={CreditCard} value={ativos.filter((c) => c.service_type === "mensalidade").length} label="Mensal" />
         <StatCard icon={Package} value={ativos.filter((c) => c.service_type === "pack").length} label="Pack" />
