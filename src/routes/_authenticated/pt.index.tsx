@@ -87,18 +87,33 @@ function DashboardPage() {
       </Card>
 
       {/* Previsão próximo mês */}
-      <Card className="p-5 bg-surface border-border">
-        <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold flex items-center gap-1.5">
-          <TrendingUp className="w-3 h-3 text-primary" />
-          Previsão {mesNome(proxMes).split(" ")[0]}
-        </p>
-        <p className="font-display text-3xl mt-1 text-foreground">{fmtEUR(previstoProx)}</p>
-        {vaiParar.length > 0 && (
-          <p className="text-xs text-destructive mt-1">
-            −{fmtEUR(vaiParar.reduce((s, c) => s + Number(c.valor_acordado || 0), 0))} de {vaiParar.length} a sair
-          </p>
-        )}
-      </Card>
+      <button onClick={() => setForecastOpen(true)} className="w-full text-left">
+        <Card className="p-5 bg-surface border-border hover:bg-surface-elevated transition-colors active:scale-[0.99]">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold flex items-center gap-1.5">
+                <TrendingUp className="w-3 h-3 text-primary" />
+                Previsão {mesNome(proxMes).split(" ")[0]}
+              </p>
+              <p className="font-display text-3xl mt-1 text-foreground">{fmtEUR(previstoProx)}</p>
+              {vaiParar.length > 0 && (
+                <p className="text-xs text-destructive mt-1">
+                  −{fmtEUR(vaiParar.reduce((s, c) => s + Number(c.valor_acordado || 0), 0))} de {vaiParar.length} a sair
+                </p>
+              )}
+            </div>
+            <Pencil className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
+          </div>
+        </Card>
+      </button>
+
+      <ForecastDialog
+        open={forecastOpen}
+        onOpenChange={setForecastOpen}
+        clients={ativos}
+        onSaved={() => queryClient.invalidateQueries({ queryKey: ["pt_clients"] })}
+      />
+
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3">
