@@ -1,7 +1,7 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { BottomNav } from "@/components/pt/BottomNav";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 function userDisplayName(user: ReturnType<typeof useAuth>["user"]): string {
@@ -25,18 +25,27 @@ function PtLayout() {
   const displayName = userDisplayName(user);
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <header className="max-w-2xl mx-auto px-5 pt-8 pb-4 flex items-end justify-between">
-        <div>
-          <p className="text-[9px] uppercase tracking-[0.32em] text-primary font-medium">
-            PT · Manager
-          </p>
-          <h1 className="font-display text-3xl leading-none mt-1.5 font-semibold tracking-tight">
-            {displayName || (
-              <>Personal <span className="text-primary italic font-light">Training</span></>
-            )}
-          </h1>
+      <header className="max-w-2xl mx-auto px-5 pt-8 pb-4 flex items-end justify-between gap-3">
+        <div className="flex items-end gap-3 min-w-0">
+          <Link
+            to="/"
+            aria-label="Voltar ao hub"
+            className="w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-surface shrink-0 mb-0.5"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <div className="min-w-0">
+            <p className="text-[9px] uppercase tracking-[0.32em] text-primary font-medium">
+              PT · Manager
+            </p>
+            <h1 className="font-display text-3xl leading-none mt-1.5 font-semibold tracking-tight truncate">
+              {displayName || (
+                <>Personal <span className="text-primary italic font-light">Training</span></>
+              )}
+            </h1>
+          </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair" className="rounded-full hover:bg-surface">
+        <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair" className="rounded-full hover:bg-surface shrink-0">
           <LogOut className="w-4 h-4" />
         </Button>
       </header>
