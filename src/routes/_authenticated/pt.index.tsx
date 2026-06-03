@@ -101,9 +101,9 @@ function DashboardPage() {
                 <TrendingUp className="w-3 h-3 text-primary" />
                 Previsão · {mesNome(proxMes).split(" ")[0]}
               </p>
-              <p className="font-display text-3xl mt-2 text-foreground font-semibold">{fmtEUR(previstoProx)}</p>
+              <p className="font-display text-3xl mt-2 text-foreground font-semibold privacy-blur">{fmtEUR(previstoProx)}</p>
               {vaiParar.length > 0 && (
-                <p className="text-xs text-destructive mt-1.5">
+                <p className="text-xs text-destructive mt-1.5 privacy-blur">
                   −{fmtEUR(vaiParar.reduce((s, c) => s + valorAPagar(c), 0))} · {vaiParar.length} a sair
                 </p>
               )}
