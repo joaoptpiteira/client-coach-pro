@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { Card } from "@/components/ui/card";
 import {
-  Users, TrendingUp, Dumbbell, CreditCard, UserPlus, UserMinus, Gift, Trophy, Activity, Wallet,
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from "@/components/ui/select";
+import {
+  Users, TrendingUp, Dumbbell, CreditCard, UserPlus, UserMinus, Gift, Trophy, Activity, Wallet, CalendarDays,
 } from "lucide-react";
 import { listClients, fmtEUR, valorAPagar, type PtClient } from "@/lib/pt-clients";
 import { listAllPayments } from "@/lib/pt-payments";
@@ -37,6 +40,12 @@ function lastMonths(n: number): string[] {
   }
   return out;
 }
+
+const ymLabelLong = (ym: string) => {
+  const [y, m] = ym.split("-").map(Number);
+  return new Intl.DateTimeFormat("pt-PT", { month: "long", year: "numeric" })
+    .format(new Date(y, (m ?? 1) - 1, 1));
+};
 
 function ReportsPage() {
   const { data: clients = [], isLoading: l1 } = useQuery({
@@ -90,20 +99,29 @@ function ReportsPage() {
   const receitaTotal = payments.reduce((s, p) => s + Number(p.valor_pt ?? p.valor_pago), 0);
   const receita12m = byMonth.reduce((s, r) => s + r.receita, 0);
   const treinos12m = byMonth.reduce((s, r) => s + r.treinos, 0);
-  const ymAtualKey = ymKey(new Date());
-  const novosMes = clients.filter((c) => c.mes_inicio?.slice(0, 7) === ymAtualKey).length;
+  const [selectedMonth, setSelectedMonth] = useState(ymKey(new Date()));
+
+  const novosMes = clients.filter((c) => c.mes_inicio?.slice(0, 7) === selectedMonth).length;
   const saidasMes = clients.filter(
-    (c) => c.status === "antigo" && c.updated_at?.slice(0, 7) === ymAtualKey,
+    (c) => c.status === "antigo" && c.updated_at?.slice(0, 7) === selectedMonth,
   ).length;
 
-  const ymAtual = ymKey(new Date());
-  const pagosMesAtual = payments.filter((p) => p.mes_referencia === ymAtual);
-  const ticketMedio = pagosMesAtual.length
-    ? pagosMesAtual.reduce((s, p) => s + Number(p.valor_pt ?? p.valor_pago), 0) / pagosMesAtual.length
+  const pagosMesSelecionado = payments.filter((p) => p.mes_referencia === selectedMonth);
+  const ticketMedio = pagosMesSelecionado.length
+    ? pagosMesSelecionado.reduce((s, p) => s + Number(p.valor_pt ?? p.valor_pago), 0) / pagosMesSelecionado.length
     : 0;
 
   const mediaReceitaMes = receita12m / MONTHS;
   const mediaTreinosMes = treinos12m / MONTHS;
+
+  const monthOptions = useMemo(() => {
+    const out: string[] = [];
+    const now = new Date();
+    for (let i = 0; i < 24; i++) {
+      out.push(ymKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+    }
+    return out;
+  }, []);
 
   const totalDescontos = ativos.reduce((s, c) => s + Number(c.desconto_afiliado || 0), 0);
   const previstoMes = ativos.reduce((s, c) => s + valorAPagar(c), 0);
@@ -162,6 +180,26 @@ function ReportsPage() {
 
   return (
     <main className="px-5 pt-2 pb-8 space-y-4">
+      {/* Month selector */}
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-medium">
+          Relatórios
+        </p>
+        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+          <SelectTrigger className="w-[160px] h-8 text-xs bg-surface border-border">
+            <CalendarDays className="w-3.5 h-3.5 mr-1.5 text-primary" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {monthOptions.map((ym) => (
+              <SelectItem key={ym} value={ym} className="text-xs">
+                {ymLabelLong(ym)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Hero — Receita lifetime */}
       <Card className="relative overflow-hidden p-6 bg-surface border-border">
         <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
@@ -182,8 +220,8 @@ function ReportsPage() {
       <div className="grid grid-cols-2 gap-2.5">
         <Stat icon={Users} value={clients.length} label="Clientes totais" />
         <Stat icon={Activity} value={ativos.length} label="Ativos" />
-        <Stat icon={UserPlus} value={novosMes} label="Novos · este mês" />
-        <Stat icon={UserMinus} value={saidasMes} label="Saídas · este mês" tone={saidasMes > 0 ? "danger" : "default"} />
+        <Stat icon={UserPlus} value={novosMes} label={`Novos · ${ymLabel(selectedMonth)}`} />
+        <Stat icon={UserMinus} value={saidasMes} label={`Saídas · ${ymLabel(selectedMonth)}`} tone={saidasMes > 0 ? "danger" : "default"} />
         <Stat icon={Dumbbell} value={treinos12m} label="Treinos · 12m" />
         <Stat icon={CreditCard} value={payments.length} label="Pagamentos" />
         <Stat icon={Wallet} value={fmtEUR(ticketMedio)} label="Ticket médio" small />
@@ -236,10 +274,10 @@ function ReportsPage() {
         </div>
       </Card>
 
-      {/* Novos vs saídas — mês atual */}
+      {/* Novos vs saídas — mês selecionado */}
       <Card className="p-5 bg-surface border-border">
         <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-medium mb-1">
-          Crescimento · este mês
+          Crescimento · {ymLabelLong(selectedMonth)}
         </p>
         <p className="font-display text-2xl font-semibold mb-4">
           {netGrowth >= 0 ? "+" : ""}{netGrowth}
