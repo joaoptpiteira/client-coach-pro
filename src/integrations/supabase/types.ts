@@ -101,6 +101,51 @@ export type Database = {
         }
         Relationships: []
       }
+      fin_debts: {
+        Row: {
+          created_at: string
+          data: string
+          data_pago: string | null
+          descricao: string | null
+          direcao: string
+          id: string
+          notas: string | null
+          owner_id: string
+          pago: boolean
+          pessoa: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          data_pago?: string | null
+          descricao?: string | null
+          direcao: string
+          id?: string
+          notas?: string | null
+          owner_id: string
+          pago?: boolean
+          pessoa: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          data_pago?: string | null
+          descricao?: string | null
+          direcao?: string
+          id?: string
+          notas?: string | null
+          owner_id?: string
+          pago?: boolean
+          pessoa?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       fin_fixed_expenses: {
         Row: {
           ativo: boolean
