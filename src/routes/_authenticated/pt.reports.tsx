@@ -90,8 +90,11 @@ function ReportsPage() {
   const receitaTotal = payments.reduce((s, p) => s + Number(p.valor_pt ?? p.valor_pago), 0);
   const receita12m = byMonth.reduce((s, r) => s + r.receita, 0);
   const treinos12m = byMonth.reduce((s, r) => s + r.treinos, 0);
-  const novos12m = byMonth.reduce((s, r) => s + r.novos, 0);
-  const saidas12m = byMonth.reduce((s, r) => s + r.saidas, 0);
+  const ymAtualKey = ymKey(new Date());
+  const novosMes = clients.filter((c) => c.mes_inicio?.slice(0, 7) === ymAtualKey).length;
+  const saidasMes = clients.filter(
+    (c) => c.status === "antigo" && c.updated_at?.slice(0, 7) === ymAtualKey,
+  ).length;
 
   const ymAtual = ymKey(new Date());
   const pagosMesAtual = payments.filter((p) => p.mes_referencia === ymAtual);
