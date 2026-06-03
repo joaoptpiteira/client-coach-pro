@@ -22,6 +22,7 @@ import { Route as AuthenticatedPtPaymentsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedPtClientsRouteImport } from './routes/_authenticated/pt.clients'
 import { Route as AuthenticatedFinancasVariaveisRouteImport } from './routes/_authenticated/financas.variaveis'
 import { Route as AuthenticatedFinancasFixasRouteImport } from './routes/_authenticated/financas.fixas'
+import { Route as AuthenticatedFinancasCategoriasRouteImport } from './routes/_authenticated/financas.categorias'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -91,12 +92,19 @@ const AuthenticatedFinancasFixasRoute =
     path: '/fixas',
     getParentRoute: () => AuthenticatedFinancasRoute,
   } as any)
+const AuthenticatedFinancasCategoriasRoute =
+  AuthenticatedFinancasCategoriasRouteImport.update({
+    id: '/categorias',
+    path: '/categorias',
+    getParentRoute: () => AuthenticatedFinancasRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/financas': typeof AuthenticatedFinancasRouteWithChildren
   '/pt': typeof AuthenticatedPtRouteWithChildren
+  '/financas/categorias': typeof AuthenticatedFinancasCategoriasRoute
   '/financas/fixas': typeof AuthenticatedFinancasFixasRoute
   '/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
   '/pt/clients': typeof AuthenticatedPtClientsRoute
@@ -109,6 +117,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof AuthenticatedIndexRoute
+  '/financas/categorias': typeof AuthenticatedFinancasCategoriasRoute
   '/financas/fixas': typeof AuthenticatedFinancasFixasRoute
   '/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
   '/pt/clients': typeof AuthenticatedPtClientsRoute
@@ -125,6 +134,7 @@ export interface FileRoutesById {
   '/_authenticated/financas': typeof AuthenticatedFinancasRouteWithChildren
   '/_authenticated/pt': typeof AuthenticatedPtRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/financas/categorias': typeof AuthenticatedFinancasCategoriasRoute
   '/_authenticated/financas/fixas': typeof AuthenticatedFinancasFixasRoute
   '/_authenticated/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
   '/_authenticated/pt/clients': typeof AuthenticatedPtClientsRoute
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/financas'
     | '/pt'
+    | '/financas/categorias'
     | '/financas/fixas'
     | '/financas/variaveis'
     | '/pt/clients'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/'
+    | '/financas/categorias'
     | '/financas/fixas'
     | '/financas/variaveis'
     | '/pt/clients'
@@ -168,6 +180,7 @@ export interface FileRouteTypes {
     | '/_authenticated/financas'
     | '/_authenticated/pt'
     | '/_authenticated/'
+    | '/_authenticated/financas/categorias'
     | '/_authenticated/financas/fixas'
     | '/_authenticated/financas/variaveis'
     | '/_authenticated/pt/clients'
@@ -276,16 +289,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinancasFixasRouteImport
       parentRoute: typeof AuthenticatedFinancasRoute
     }
+    '/_authenticated/financas/categorias': {
+      id: '/_authenticated/financas/categorias'
+      path: '/categorias'
+      fullPath: '/financas/categorias'
+      preLoaderRoute: typeof AuthenticatedFinancasCategoriasRouteImport
+      parentRoute: typeof AuthenticatedFinancasRoute
+    }
   }
 }
 
 interface AuthenticatedFinancasRouteChildren {
+  AuthenticatedFinancasCategoriasRoute: typeof AuthenticatedFinancasCategoriasRoute
   AuthenticatedFinancasFixasRoute: typeof AuthenticatedFinancasFixasRoute
   AuthenticatedFinancasVariaveisRoute: typeof AuthenticatedFinancasVariaveisRoute
   AuthenticatedFinancasIndexRoute: typeof AuthenticatedFinancasIndexRoute
 }
 
 const AuthenticatedFinancasRouteChildren: AuthenticatedFinancasRouteChildren = {
+  AuthenticatedFinancasCategoriasRoute: AuthenticatedFinancasCategoriasRoute,
   AuthenticatedFinancasFixasRoute: AuthenticatedFinancasFixasRoute,
   AuthenticatedFinancasVariaveisRoute: AuthenticatedFinancasVariaveisRoute,
   AuthenticatedFinancasIndexRoute: AuthenticatedFinancasIndexRoute,
