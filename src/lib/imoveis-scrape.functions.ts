@@ -21,26 +21,45 @@ type Config = {
   zona: string | null;
 };
 
+type PortalError = { portal: string; status: number | string };
+
+type ScrapeResult = {
+  ok: boolean;
+  error?: string;
+  novos: number;
+  total: number;
+  portalStats: Record<string, number>;
+  erros: PortalError[];
+};
+
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
 
-async function fetchHtml(url: string): Promise<string | null> {
+type FetchOutcome =
+  | { ok: true; html: string }
+  | { ok: false; status: number | string };
+
+async function fetchHtml(url: string, referer?: string): Promise<FetchOutcome> {
   try {
     const res = await fetch(url, {
       headers: {
         "User-Agent": UA,
-        Accept: "text/html,application/xhtml+xml",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "pt-PT,pt;q=0.9,en;q=0.8",
+        "Cache-Control": "no-cache",
+        ...(referer ? { Referer: referer } : {}),
       },
+      signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) {
       console.warn(`[scrape] ${url} -> HTTP ${res.status}`);
-      return null;
+      return { ok: false, status: res.status };
     }
-    return await res.text();
+    return { ok: true, html: await res.text() };
   } catch (e) {
-    console.warn(`[scrape] ${url} failed`, e);
-    return null;
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`[scrape] ${url} failed: ${msg}`);
+    return { ok: false, status: msg.includes("timeout") ? "timeout" : "network" };
   }
 }
 
@@ -52,7 +71,6 @@ function parseNumber(s: string | undefined | null): number | null {
 }
 
 function tipoSlugFromConfig(tipo: Config["tipo"], portal: string): string[] {
-  // returns portal-specific URL slug segments to fetch
   if (portal === "imovirtual") {
     if (tipo === "apartamento") return ["apartamento"];
     if (tipo === "moradia") return ["moradia"];
@@ -86,19 +104,25 @@ function zonaSlug(zona: string | null): string {
     .replace(/[^a-z0-9-]/g, "");
 }
 
+type ScraperResult = { listings: ScrapedListing[]; error?: number | string };
+
 // --- IMOVIRTUAL ---
-async function scrapeImovirtual(cfg: Config): Promise<ScrapedListing[]> {
+async function scrapeImovirtual(cfg: Config): Promise<ScraperResult> {
   const out: ScrapedListing[] = [];
   const zona = zonaSlug(cfg.zona) || "todo-o-pais";
+  let lastError: number | string | undefined;
   for (const tipo of tipoSlugFromConfig(cfg.tipo, "imovirtual")) {
     const params = new URLSearchParams();
     if (cfg.preco_min) params.set("search[filter_float_price:from]", String(cfg.preco_min));
     if (cfg.preco_max) params.set("search[filter_float_price:to]", String(cfg.preco_max));
     if (cfg.quartos_min) params.set("search[filter_enum_rooms_num][0]", String(cfg.quartos_min));
     const url = `https://www.imovirtual.com/comprar/${tipo}/${zona}/?${params.toString()}`;
-    const html = await fetchHtml(url);
-    if (!html) continue;
-    // Listing cards typically: <article ...> with anchor href "/anuncio/..."
+    const r = await fetchHtml(url, "https://www.imovirtual.com/");
+    if (!r.ok) {
+      lastError = r.status;
+      continue;
+    }
+    const html = r.html;
     const articleRe = /<article[\s\S]*?<\/article>/g;
     const matches = html.match(articleRe) ?? [];
     for (const block of matches.slice(0, 30)) {
@@ -106,7 +130,8 @@ async function scrapeImovirtual(cfg: Config): Promise<ScrapedListing[]> {
       if (!hrefM) continue;
       const titleM = block.match(/<(?:h2|h3)[^>]*>([\s\S]*?)<\/(?:h2|h3)>/);
       const priceM = block.match(/€\s*([\d\s.,]+)/);
-      const locM = block.match(/<p[^>]*data-cy="listing-item-location"[^>]*>([\s\S]*?)<\/p>/) ||
+      const locM =
+        block.match(/<p[^>]*data-cy="listing-item-location"[^>]*>([\s\S]*?)<\/p>/) ||
         block.match(/<p[^>]*location[^>]*>([\s\S]*?)<\/p>/i);
       const roomsM = block.match(/(\d+)\s*quartos?/i);
       const areaM = block.match(/(\d+[\d.,]*)\s*m[²2]/i);
@@ -122,21 +147,26 @@ async function scrapeImovirtual(cfg: Config): Promise<ScrapedListing[]> {
       });
     }
   }
-  return out;
+  return out.length === 0 && lastError !== undefined ? { listings: out, error: lastError } : { listings: out };
 }
 
-// --- IDEALISTA --- (high block rate, best effort)
-async function scrapeIdealista(cfg: Config): Promise<ScrapedListing[]> {
+// --- IDEALISTA ---
+async function scrapeIdealista(cfg: Config): Promise<ScraperResult> {
   const out: ScrapedListing[] = [];
   const zona = zonaSlug(cfg.zona) || "portugal";
+  let lastError: number | string | undefined;
   for (const tipo of tipoSlugFromConfig(cfg.tipo, "idealista")) {
     let path = `/comprar-casas/${zona}/`;
     if (tipo === "apartamentos") path += "com-apartamentos/";
     else if (tipo === "moradias") path += "com-moradias/";
     if (cfg.preco_max) path = path.replace(/\/$/, `,precio-max_${cfg.preco_max}/`);
     const url = `https://www.idealista.pt${path}`;
-    const html = await fetchHtml(url);
-    if (!html) continue;
+    const r = await fetchHtml(url, "https://www.idealista.pt/");
+    if (!r.ok) {
+      lastError = r.status;
+      continue;
+    }
+    const html = r.html;
     const itemRe = /<article[^>]*class="[^"]*item[^"]*"[\s\S]*?<\/article>/g;
     const matches = html.match(itemRe) ?? [];
     for (const block of matches.slice(0, 30)) {
@@ -159,21 +189,26 @@ async function scrapeIdealista(cfg: Config): Promise<ScrapedListing[]> {
       });
     }
   }
-  return out;
+  return out.length === 0 && lastError !== undefined ? { listings: out, error: lastError } : { listings: out };
 }
 
 // --- OLX ---
-async function scrapeOlx(cfg: Config): Promise<ScrapedListing[]> {
+async function scrapeOlx(cfg: Config): Promise<ScraperResult> {
   const out: ScrapedListing[] = [];
   const zona = zonaSlug(cfg.zona);
+  let lastError: number | string | undefined;
   for (const tipo of tipoSlugFromConfig(cfg.tipo, "olx")) {
     const params = new URLSearchParams();
     if (cfg.preco_min) params.set("search[filter_float_price:from]", String(cfg.preco_min));
     if (cfg.preco_max) params.set("search[filter_float_price:to]", String(cfg.preco_max));
     const base = `https://www.olx.pt/imoveis/${tipo}/venda/${zona ? zona + "/" : ""}`;
     const url = `${base}?${params.toString()}`;
-    const html = await fetchHtml(url);
-    if (!html) continue;
+    const r = await fetchHtml(url, "https://www.olx.pt/");
+    if (!r.ok) {
+      lastError = r.status;
+      continue;
+    }
+    const html = r.html;
     const cardRe = /<div[^>]*data-cy="l-card"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/g;
     const matches = html.match(cardRe) ?? [];
     for (const block of matches.slice(0, 30)) {
@@ -194,24 +229,29 @@ async function scrapeOlx(cfg: Config): Promise<ScrapedListing[]> {
       });
     }
   }
-  return out;
+  return out.length === 0 && lastError !== undefined ? { listings: out, error: lastError } : { listings: out };
 }
 
 // --- CASA SAPO ---
-async function scrapeCasaSapo(cfg: Config): Promise<ScrapedListing[]> {
+async function scrapeCasaSapo(cfg: Config): Promise<ScraperResult> {
   const out: ScrapedListing[] = [];
   const zona = zonaSlug(cfg.zona);
+  let lastError: number | string | undefined;
   for (const tipo of tipoSlugFromConfig(cfg.tipo, "casasapo")) {
     const params = new URLSearchParams();
-    params.set("tr", "1"); // venda
+    params.set("tr", "1");
     if (cfg.preco_min) params.set("pmin", String(cfg.preco_min));
     if (cfg.preco_max) params.set("pmax", String(cfg.preco_max));
     if (cfg.quartos_min) params.set("tpmin", String(cfg.quartos_min));
     if (zona) params.set("lo", zona);
     params.set("tp", tipo === "apartamento" ? "1" : "2");
     const url = `https://casa.sapo.pt/Venda/Imoveis/?${params.toString()}`;
-    const html = await fetchHtml(url);
-    if (!html) continue;
+    const r = await fetchHtml(url, "https://casa.sapo.pt/");
+    if (!r.ok) {
+      lastError = r.status;
+      continue;
+    }
+    const html = r.html;
     const propRe = /<div[^>]*class="[^"]*property[^"]*"[\s\S]*?<\/div>\s*<\/div>/g;
     const matches = html.match(propRe) ?? [];
     for (const block of matches.slice(0, 30)) {
@@ -233,94 +273,107 @@ async function scrapeCasaSapo(cfg: Config): Promise<ScrapedListing[]> {
       });
     }
   }
-  return out;
+  return out.length === 0 && lastError !== undefined ? { listings: out, error: lastError } : { listings: out };
 }
 
-const SCRAPERS: Record<string, (cfg: Config) => Promise<ScrapedListing[]>> = {
+const SCRAPERS: Record<string, (cfg: Config) => Promise<ScraperResult>> = {
   imovirtual: scrapeImovirtual,
   idealista: scrapeIdealista,
   olx: scrapeOlx,
   casasapo: scrapeCasaSapo,
 };
 
+// SupabaseLike: minimal interface so this works with both auth client and admin client.
+type SupabaseLike = {
+  from: (table: string) => any;
+};
+
+export async function scrapeForOwner(
+  supabase: SupabaseLike,
+  userId: string,
+): Promise<ScrapeResult> {
+  const { data: cfgRow, error: cfgErr } = await supabase
+    .from("config_imoveis")
+    .select("*")
+    .eq("owner_id", userId)
+    .maybeSingle();
+  if (cfgErr) throw new Error(cfgErr.message);
+  if (!cfgRow) {
+    return { ok: false, error: "Sem configuração.", novos: 0, total: 0, portalStats: {}, erros: [] };
+  }
+
+  const cfg: Config = {
+    portais: cfgRow.portais ?? [],
+    tipo: cfgRow.tipo,
+    preco_min: cfgRow.preco_min ? Number(cfgRow.preco_min) : null,
+    preco_max: cfgRow.preco_max ? Number(cfgRow.preco_max) : null,
+    quartos_min: cfgRow.quartos_min,
+    zona: cfgRow.zona,
+  };
+
+  const results: ScrapedListing[] = [];
+  const portalStats: Record<string, number> = {};
+  const erros: PortalError[] = [];
+  for (const p of cfg.portais) {
+    const fn = SCRAPERS[p];
+    if (!fn) continue;
+    try {
+      const r = await fn(cfg);
+      portalStats[p] = r.listings.length;
+      results.push(...r.listings);
+      if (r.error !== undefined) erros.push({ portal: p, status: r.error });
+    } catch (e) {
+      console.error(`[scrape] portal ${p} threw`, e);
+      portalStats[p] = -1;
+      erros.push({ portal: p, status: e instanceof Error ? e.message : "error" });
+    }
+  }
+
+  const filtered = results.filter((r) => {
+    if (cfg.preco_min && r.preco != null && r.preco < cfg.preco_min) return false;
+    if (cfg.preco_max && r.preco != null && r.preco > cfg.preco_max) return false;
+    if (cfg.quartos_min && r.quartos != null && r.quartos < cfg.quartos_min) return false;
+    return true;
+  });
+
+  let novos = 0;
+  if (filtered.length > 0) {
+    const urls = filtered.map((f) => f.url);
+    const { data: existing } = await supabase
+      .from("imoveis")
+      .select("url")
+      .eq("owner_id", userId)
+      .in("url", urls);
+    const existingSet = new Set((existing ?? []).map((e: { url: string }) => e.url));
+
+    const toInsert = filtered
+      .filter((f) => !existingSet.has(f.url))
+      .map((f) => ({ ...f, owner_id: userId }));
+    novos = toInsert.length;
+
+    if (toInsert.length > 0) {
+      const { error: insErr } = await supabase.from("imoveis").insert(toInsert);
+      if (insErr) console.error("[scrape] insert error", insErr);
+    }
+  }
+
+  await supabase
+    .from("config_imoveis")
+    .update({ ultima_atualizacao: new Date().toISOString() })
+    .eq("owner_id", userId);
+
+  return {
+    ok: true,
+    novos,
+    total: filtered.length,
+    portalStats,
+    erros,
+  };
+}
+
 export const runScrape = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-
-    const { data: cfgRow, error: cfgErr } = await supabase
-      .from("config_imoveis")
-      .select("*")
-      .eq("owner_id", userId)
-      .maybeSingle();
-    if (cfgErr) throw new Error(cfgErr.message);
-    if (!cfgRow) {
-      return { ok: false, error: "Configura a pesquisa primeiro.", novos: 0, total: 0 };
-    }
-
-    const cfg: Config = {
-      portais: cfgRow.portais ?? [],
-      tipo: cfgRow.tipo,
-      preco_min: cfgRow.preco_min ? Number(cfgRow.preco_min) : null,
-      preco_max: cfgRow.preco_max ? Number(cfgRow.preco_max) : null,
-      quartos_min: cfgRow.quartos_min,
-      zona: cfgRow.zona,
-    };
-
-    const results: ScrapedListing[] = [];
-    const portalStats: Record<string, number> = {};
-    for (const p of cfg.portais) {
-      const fn = SCRAPERS[p];
-      if (!fn) continue;
-      try {
-        const r = await fn(cfg);
-        portalStats[p] = r.length;
-        results.push(...r);
-      } catch (e) {
-        console.error(`[scrape] portal ${p} threw`, e);
-        portalStats[p] = -1;
-      }
-    }
-
-    // Filter client-side again (some portals ignore params)
-    const filtered = results.filter((r) => {
-      if (cfg.preco_min && r.preco != null && r.preco < cfg.preco_min) return false;
-      if (cfg.preco_max && r.preco != null && r.preco > cfg.preco_max) return false;
-      if (cfg.quartos_min && r.quartos != null && r.quartos < cfg.quartos_min) return false;
-      return true;
-    });
-
-    let novos = 0;
-    if (filtered.length > 0) {
-      // Find existing URLs to count true inserts (unique constraint upsert)
-      const urls = filtered.map((f) => f.url);
-      const { data: existing } = await supabase
-        .from("imoveis")
-        .select("url")
-        .eq("owner_id", userId)
-        .in("url", urls);
-      const existingSet = new Set((existing ?? []).map((e) => e.url));
-
-      const toInsert = filtered
-        .filter((f) => !existingSet.has(f.url))
-        .map((f) => ({ ...f, owner_id: userId }));
-      novos = toInsert.length;
-
-      if (toInsert.length > 0) {
-        const { error: insErr } = await supabase.from("imoveis").insert(toInsert);
-        if (insErr) console.error("[scrape] insert error", insErr);
-      }
-    }
-
-    await supabase
-      .from("config_imoveis")
-      .update({ ultima_atualizacao: new Date().toISOString() })
-      .eq("owner_id", userId);
-
-    return {
-      ok: true,
-      novos,
-      total: filtered.length,
-      portalStats,
-    };
+    return scrapeForOwner(supabase, userId);
   });
