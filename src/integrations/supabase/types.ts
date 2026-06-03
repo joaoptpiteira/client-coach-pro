@@ -101,6 +101,63 @@ export type Database = {
         }
         Relationships: []
       }
+      fin_credits: {
+        Row: {
+          ativo: boolean
+          categoria_id: string | null
+          created_at: string
+          credor: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          dia_pagamento: number | null
+          id: string
+          nome: string
+          notas: string | null
+          owner_id: string
+          prestacao_mensal: number
+          taxa_juro: number | null
+          updated_at: string
+          valor_em_divida: number
+          valor_total: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria_id?: string | null
+          created_at?: string
+          credor?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          dia_pagamento?: number | null
+          id?: string
+          nome: string
+          notas?: string | null
+          owner_id: string
+          prestacao_mensal?: number
+          taxa_juro?: number | null
+          updated_at?: string
+          valor_em_divida?: number
+          valor_total?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria_id?: string | null
+          created_at?: string
+          credor?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          dia_pagamento?: number | null
+          id?: string
+          nome?: string
+          notas?: string | null
+          owner_id?: string
+          prestacao_mensal?: number
+          taxa_juro?: number | null
+          updated_at?: string
+          valor_em_divida?: number
+          valor_total?: number
+        }
+        Relationships: []
+      }
       fin_debts: {
         Row: {
           created_at: string
