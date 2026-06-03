@@ -99,16 +99,16 @@ function ReportsPage() {
   const receitaTotal = payments.reduce((s, p) => s + Number(p.valor_pt ?? p.valor_pago), 0);
   const receita12m = byMonth.reduce((s, r) => s + r.receita, 0);
   const treinos12m = byMonth.reduce((s, r) => s + r.treinos, 0);
-  const ymAtualKey = ymKey(new Date());
-  const novosMes = clients.filter((c) => c.mes_inicio?.slice(0, 7) === ymAtualKey).length;
+  const [selectedMonth, setSelectedMonth] = useState(ymKey(new Date()));
+
+  const novosMes = clients.filter((c) => c.mes_inicio?.slice(0, 7) === selectedMonth).length;
   const saidasMes = clients.filter(
-    (c) => c.status === "antigo" && c.updated_at?.slice(0, 7) === ymAtualKey,
+    (c) => c.status === "antigo" && c.updated_at?.slice(0, 7) === selectedMonth,
   ).length;
 
-  const ymAtual = ymKey(new Date());
-  const pagosMesAtual = payments.filter((p) => p.mes_referencia === ymAtual);
-  const ticketMedio = pagosMesAtual.length
-    ? pagosMesAtual.reduce((s, p) => s + Number(p.valor_pt ?? p.valor_pago), 0) / pagosMesAtual.length
+  const pagosMesSelecionado = payments.filter((p) => p.mes_referencia === selectedMonth);
+  const ticketMedio = pagosMesSelecionado.length
+    ? pagosMesSelecionado.reduce((s, p) => s + Number(p.valor_pt ?? p.valor_pago), 0) / pagosMesSelecionado.length
     : 0;
 
   const mediaReceitaMes = receita12m / MONTHS;
