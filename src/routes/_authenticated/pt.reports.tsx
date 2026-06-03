@@ -114,6 +114,15 @@ function ReportsPage() {
   const mediaReceitaMes = receita12m / MONTHS;
   const mediaTreinosMes = treinos12m / MONTHS;
 
+  const monthOptions = useMemo(() => {
+    const out: string[] = [];
+    const now = new Date();
+    for (let i = 0; i < 24; i++) {
+      out.push(ymKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+    }
+    return out;
+  }, []);
+
   const totalDescontos = ativos.reduce((s, c) => s + Number(c.desconto_afiliado || 0), 0);
   const previstoMes = ativos.reduce((s, c) => s + valorAPagar(c), 0);
 
