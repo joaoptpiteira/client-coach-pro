@@ -77,7 +77,7 @@ function DashboardPage() {
             {mesNome(now)}
           </p>
           <div className="flex items-baseline gap-2 mt-3">
-            <span className="font-display text-5xl text-foreground font-semibold tracking-tight">{fmtEUR(recebido)}</span>
+            <span className="font-display text-5xl text-foreground font-semibold tracking-tight privacy-blur">{fmtEUR(recebido)}</span>
           </div>
           <div className="mt-4 h-1 w-full rounded-full bg-muted overflow-hidden">
             <div
