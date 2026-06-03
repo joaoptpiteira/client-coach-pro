@@ -20,6 +20,7 @@ import { Route as AuthenticatedPtTrainingsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedPtReportsRouteImport } from './routes/_authenticated/pt.reports'
 import { Route as AuthenticatedPtPaymentsRouteImport } from './routes/_authenticated/pt.payments'
 import { Route as AuthenticatedPtClientsRouteImport } from './routes/_authenticated/pt.clients'
+import { Route as AuthenticatedFinancasVariaveisRouteImport } from './routes/_authenticated/financas.variaveis'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -77,12 +78,19 @@ const AuthenticatedPtClientsRoute = AuthenticatedPtClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedPtRoute,
 } as any)
+const AuthenticatedFinancasVariaveisRoute =
+  AuthenticatedFinancasVariaveisRouteImport.update({
+    id: '/variaveis',
+    path: '/variaveis',
+    getParentRoute: () => AuthenticatedFinancasRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/financas': typeof AuthenticatedFinancasRouteWithChildren
   '/pt': typeof AuthenticatedPtRouteWithChildren
+  '/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
   '/pt/clients': typeof AuthenticatedPtClientsRoute
   '/pt/payments': typeof AuthenticatedPtPaymentsRoute
   '/pt/reports': typeof AuthenticatedPtReportsRoute
@@ -93,6 +101,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof AuthenticatedIndexRoute
+  '/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
   '/pt/clients': typeof AuthenticatedPtClientsRoute
   '/pt/payments': typeof AuthenticatedPtPaymentsRoute
   '/pt/reports': typeof AuthenticatedPtReportsRoute
@@ -107,6 +116,7 @@ export interface FileRoutesById {
   '/_authenticated/financas': typeof AuthenticatedFinancasRouteWithChildren
   '/_authenticated/pt': typeof AuthenticatedPtRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
   '/_authenticated/pt/clients': typeof AuthenticatedPtClientsRoute
   '/_authenticated/pt/payments': typeof AuthenticatedPtPaymentsRoute
   '/_authenticated/pt/reports': typeof AuthenticatedPtReportsRoute
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/financas'
     | '/pt'
+    | '/financas/variaveis'
     | '/pt/clients'
     | '/pt/payments'
     | '/pt/reports'
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/'
+    | '/financas/variaveis'
     | '/pt/clients'
     | '/pt/payments'
     | '/pt/reports'
@@ -144,6 +156,7 @@ export interface FileRouteTypes {
     | '/_authenticated/financas'
     | '/_authenticated/pt'
     | '/_authenticated/'
+    | '/_authenticated/financas/variaveis'
     | '/_authenticated/pt/clients'
     | '/_authenticated/pt/payments'
     | '/_authenticated/pt/reports'
@@ -236,14 +249,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPtClientsRouteImport
       parentRoute: typeof AuthenticatedPtRoute
     }
+    '/_authenticated/financas/variaveis': {
+      id: '/_authenticated/financas/variaveis'
+      path: '/variaveis'
+      fullPath: '/financas/variaveis'
+      preLoaderRoute: typeof AuthenticatedFinancasVariaveisRouteImport
+      parentRoute: typeof AuthenticatedFinancasRoute
+    }
   }
 }
 
 interface AuthenticatedFinancasRouteChildren {
+  AuthenticatedFinancasVariaveisRoute: typeof AuthenticatedFinancasVariaveisRoute
   AuthenticatedFinancasIndexRoute: typeof AuthenticatedFinancasIndexRoute
 }
 
 const AuthenticatedFinancasRouteChildren: AuthenticatedFinancasRouteChildren = {
+  AuthenticatedFinancasVariaveisRoute: AuthenticatedFinancasVariaveisRoute,
   AuthenticatedFinancasIndexRoute: AuthenticatedFinancasIndexRoute,
 }
 
