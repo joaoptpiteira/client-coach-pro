@@ -89,12 +89,11 @@ export function valorRealPT(
   );
 }
 
-/** Valor a pagar = valor real PT − desconto afiliado */
+/** Valor a pagar = valor real PT (desconto afiliado já está refletido no valor acordado, é apenas informativo) */
 export function valorAPagar(
   c: Pick<PtClient, "valor_acordado" | "valor_ginasio_por_treino" | "valor_acompanhamento_online" | "desconto_afiliado">,
 ) {
-
-  return Math.max(0, valorRealPT(c) - Number(c.desconto_afiliado ?? 0));
+  return valorRealPT(c);
 }
 
 /** Previsão para próximo mês com base nas escolhas individuais */
