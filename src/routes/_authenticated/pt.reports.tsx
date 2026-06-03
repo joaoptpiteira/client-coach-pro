@@ -236,41 +236,28 @@ function ReportsPage() {
         </div>
       </Card>
 
-      {/* Novos vs saídas */}
+      {/* Novos vs saídas — mês atual */}
       <Card className="p-5 bg-surface border-border">
-        <div className="flex items-baseline justify-between mb-4">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-medium mb-1">
-              Crescimento · 12 meses
-            </p>
-            <p className="font-display text-2xl font-semibold">
-              {netGrowth >= 0 ? "+" : ""}{netGrowth}
-              <span className="text-sm text-muted-foreground font-normal ml-2">líquido</span>
-            </p>
-          </div>
-          <div className="flex gap-3 text-[10px]">
-            <span className="flex items-center gap-1.5 text-muted-foreground">
+        <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-medium mb-1">
+          Crescimento · este mês
+        </p>
+        <p className="font-display text-2xl font-semibold mb-4">
+          {netGrowth >= 0 ? "+" : ""}{netGrowth}
+          <span className="text-sm text-muted-foreground font-normal ml-2">líquido</span>
+        </p>
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="rounded-lg border border-border p-3">
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-2">
               <span className="w-2 h-2 rounded-sm bg-primary" /> Novos
-            </span>
-            <span className="flex items-center gap-1.5 text-muted-foreground">
-              <span className="w-2 h-2 rounded-sm bg-destructive" /> Saídas
-            </span>
+            </div>
+            <p className="font-display text-3xl font-semibold leading-none">{novosMes}</p>
           </div>
-        </div>
-        <div className="h-40 -mx-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={byMonth} margin={{ top: 4, right: 8, left: -25, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} width={30} allowDecimals={false} />
-              <Tooltip
-                cursor={{ fill: "oklch(from var(--muted) l c h / 0.3)" }}
-                contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-              />
-              <Bar dataKey="novos" fill="var(--primary)" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="saidas" fill="var(--destructive)" radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="rounded-lg border border-border p-3">
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-2">
+              <span className="w-2 h-2 rounded-sm bg-destructive" /> Saídas
+            </div>
+            <p className="font-display text-3xl font-semibold leading-none">{saidasMes}</p>
+          </div>
         </div>
       </Card>
 
