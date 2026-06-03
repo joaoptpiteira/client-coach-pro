@@ -13,13 +13,16 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedPtRouteImport } from './routes/_authenticated/pt'
+import { Route as AuthenticatedImobiliarioRouteImport } from './routes/_authenticated/imobiliario'
 import { Route as AuthenticatedFinancasRouteImport } from './routes/_authenticated/financas'
 import { Route as AuthenticatedPtIndexRouteImport } from './routes/_authenticated/pt.index'
+import { Route as AuthenticatedImobiliarioIndexRouteImport } from './routes/_authenticated/imobiliario.index'
 import { Route as AuthenticatedFinancasIndexRouteImport } from './routes/_authenticated/financas.index'
 import { Route as AuthenticatedPtTrainingsRouteImport } from './routes/_authenticated/pt.trainings'
 import { Route as AuthenticatedPtReportsRouteImport } from './routes/_authenticated/pt.reports'
 import { Route as AuthenticatedPtPaymentsRouteImport } from './routes/_authenticated/pt.payments'
 import { Route as AuthenticatedPtClientsRouteImport } from './routes/_authenticated/pt.clients'
+import { Route as AuthenticatedImobiliarioConfigRouteImport } from './routes/_authenticated/imobiliario.config'
 import { Route as AuthenticatedFinancasVariaveisRouteImport } from './routes/_authenticated/financas.variaveis'
 import { Route as AuthenticatedFinancasFixasRouteImport } from './routes/_authenticated/financas.fixas'
 import { Route as AuthenticatedFinancasCategoriasRouteImport } from './routes/_authenticated/financas.categorias'
@@ -43,6 +46,12 @@ const AuthenticatedPtRoute = AuthenticatedPtRouteImport.update({
   path: '/pt',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedImobiliarioRoute =
+  AuthenticatedImobiliarioRouteImport.update({
+    id: '/imobiliario',
+    path: '/imobiliario',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFinancasRoute = AuthenticatedFinancasRouteImport.update({
   id: '/financas',
   path: '/financas',
@@ -53,6 +62,12 @@ const AuthenticatedPtIndexRoute = AuthenticatedPtIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedPtRoute,
 } as any)
+const AuthenticatedImobiliarioIndexRoute =
+  AuthenticatedImobiliarioIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedImobiliarioRoute,
+  } as any)
 const AuthenticatedFinancasIndexRoute =
   AuthenticatedFinancasIndexRouteImport.update({
     id: '/',
@@ -80,6 +95,12 @@ const AuthenticatedPtClientsRoute = AuthenticatedPtClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedPtRoute,
 } as any)
+const AuthenticatedImobiliarioConfigRoute =
+  AuthenticatedImobiliarioConfigRouteImport.update({
+    id: '/config',
+    path: '/config',
+    getParentRoute: () => AuthenticatedImobiliarioRoute,
+  } as any)
 const AuthenticatedFinancasVariaveisRoute =
   AuthenticatedFinancasVariaveisRouteImport.update({
     id: '/variaveis',
@@ -103,15 +124,18 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/financas': typeof AuthenticatedFinancasRouteWithChildren
+  '/imobiliario': typeof AuthenticatedImobiliarioRouteWithChildren
   '/pt': typeof AuthenticatedPtRouteWithChildren
   '/financas/categorias': typeof AuthenticatedFinancasCategoriasRoute
   '/financas/fixas': typeof AuthenticatedFinancasFixasRoute
   '/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
+  '/imobiliario/config': typeof AuthenticatedImobiliarioConfigRoute
   '/pt/clients': typeof AuthenticatedPtClientsRoute
   '/pt/payments': typeof AuthenticatedPtPaymentsRoute
   '/pt/reports': typeof AuthenticatedPtReportsRoute
   '/pt/trainings': typeof AuthenticatedPtTrainingsRoute
   '/financas/': typeof AuthenticatedFinancasIndexRoute
+  '/imobiliario/': typeof AuthenticatedImobiliarioIndexRoute
   '/pt/': typeof AuthenticatedPtIndexRoute
 }
 export interface FileRoutesByTo {
@@ -120,11 +144,13 @@ export interface FileRoutesByTo {
   '/financas/categorias': typeof AuthenticatedFinancasCategoriasRoute
   '/financas/fixas': typeof AuthenticatedFinancasFixasRoute
   '/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
+  '/imobiliario/config': typeof AuthenticatedImobiliarioConfigRoute
   '/pt/clients': typeof AuthenticatedPtClientsRoute
   '/pt/payments': typeof AuthenticatedPtPaymentsRoute
   '/pt/reports': typeof AuthenticatedPtReportsRoute
   '/pt/trainings': typeof AuthenticatedPtTrainingsRoute
   '/financas': typeof AuthenticatedFinancasIndexRoute
+  '/imobiliario': typeof AuthenticatedImobiliarioIndexRoute
   '/pt': typeof AuthenticatedPtIndexRoute
 }
 export interface FileRoutesById {
@@ -132,16 +158,19 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/financas': typeof AuthenticatedFinancasRouteWithChildren
+  '/_authenticated/imobiliario': typeof AuthenticatedImobiliarioRouteWithChildren
   '/_authenticated/pt': typeof AuthenticatedPtRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/financas/categorias': typeof AuthenticatedFinancasCategoriasRoute
   '/_authenticated/financas/fixas': typeof AuthenticatedFinancasFixasRoute
   '/_authenticated/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
+  '/_authenticated/imobiliario/config': typeof AuthenticatedImobiliarioConfigRoute
   '/_authenticated/pt/clients': typeof AuthenticatedPtClientsRoute
   '/_authenticated/pt/payments': typeof AuthenticatedPtPaymentsRoute
   '/_authenticated/pt/reports': typeof AuthenticatedPtReportsRoute
   '/_authenticated/pt/trainings': typeof AuthenticatedPtTrainingsRoute
   '/_authenticated/financas/': typeof AuthenticatedFinancasIndexRoute
+  '/_authenticated/imobiliario/': typeof AuthenticatedImobiliarioIndexRoute
   '/_authenticated/pt/': typeof AuthenticatedPtIndexRoute
 }
 export interface FileRouteTypes {
@@ -150,15 +179,18 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/financas'
+    | '/imobiliario'
     | '/pt'
     | '/financas/categorias'
     | '/financas/fixas'
     | '/financas/variaveis'
+    | '/imobiliario/config'
     | '/pt/clients'
     | '/pt/payments'
     | '/pt/reports'
     | '/pt/trainings'
     | '/financas/'
+    | '/imobiliario/'
     | '/pt/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -167,27 +199,32 @@ export interface FileRouteTypes {
     | '/financas/categorias'
     | '/financas/fixas'
     | '/financas/variaveis'
+    | '/imobiliario/config'
     | '/pt/clients'
     | '/pt/payments'
     | '/pt/reports'
     | '/pt/trainings'
     | '/financas'
+    | '/imobiliario'
     | '/pt'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
     | '/_authenticated/financas'
+    | '/_authenticated/imobiliario'
     | '/_authenticated/pt'
     | '/_authenticated/'
     | '/_authenticated/financas/categorias'
     | '/_authenticated/financas/fixas'
     | '/_authenticated/financas/variaveis'
+    | '/_authenticated/imobiliario/config'
     | '/_authenticated/pt/clients'
     | '/_authenticated/pt/payments'
     | '/_authenticated/pt/reports'
     | '/_authenticated/pt/trainings'
     | '/_authenticated/financas/'
+    | '/_authenticated/imobiliario/'
     | '/_authenticated/pt/'
   fileRoutesById: FileRoutesById
 }
@@ -226,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPtRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/imobiliario': {
+      id: '/_authenticated/imobiliario'
+      path: '/imobiliario'
+      fullPath: '/imobiliario'
+      preLoaderRoute: typeof AuthenticatedImobiliarioRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/financas': {
       id: '/_authenticated/financas'
       path: '/financas'
@@ -239,6 +283,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/pt/'
       preLoaderRoute: typeof AuthenticatedPtIndexRouteImport
       parentRoute: typeof AuthenticatedPtRoute
+    }
+    '/_authenticated/imobiliario/': {
+      id: '/_authenticated/imobiliario/'
+      path: '/'
+      fullPath: '/imobiliario/'
+      preLoaderRoute: typeof AuthenticatedImobiliarioIndexRouteImport
+      parentRoute: typeof AuthenticatedImobiliarioRoute
     }
     '/_authenticated/financas/': {
       id: '/_authenticated/financas/'
@@ -274,6 +325,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/pt/clients'
       preLoaderRoute: typeof AuthenticatedPtClientsRouteImport
       parentRoute: typeof AuthenticatedPtRoute
+    }
+    '/_authenticated/imobiliario/config': {
+      id: '/_authenticated/imobiliario/config'
+      path: '/config'
+      fullPath: '/imobiliario/config'
+      preLoaderRoute: typeof AuthenticatedImobiliarioConfigRouteImport
+      parentRoute: typeof AuthenticatedImobiliarioRoute
     }
     '/_authenticated/financas/variaveis': {
       id: '/_authenticated/financas/variaveis'
@@ -318,6 +376,22 @@ const AuthenticatedFinancasRouteWithChildren =
     AuthenticatedFinancasRouteChildren,
   )
 
+interface AuthenticatedImobiliarioRouteChildren {
+  AuthenticatedImobiliarioConfigRoute: typeof AuthenticatedImobiliarioConfigRoute
+  AuthenticatedImobiliarioIndexRoute: typeof AuthenticatedImobiliarioIndexRoute
+}
+
+const AuthenticatedImobiliarioRouteChildren: AuthenticatedImobiliarioRouteChildren =
+  {
+    AuthenticatedImobiliarioConfigRoute: AuthenticatedImobiliarioConfigRoute,
+    AuthenticatedImobiliarioIndexRoute: AuthenticatedImobiliarioIndexRoute,
+  }
+
+const AuthenticatedImobiliarioRouteWithChildren =
+  AuthenticatedImobiliarioRoute._addFileChildren(
+    AuthenticatedImobiliarioRouteChildren,
+  )
+
 interface AuthenticatedPtRouteChildren {
   AuthenticatedPtClientsRoute: typeof AuthenticatedPtClientsRoute
   AuthenticatedPtPaymentsRoute: typeof AuthenticatedPtPaymentsRoute
@@ -340,12 +414,14 @@ const AuthenticatedPtRouteWithChildren = AuthenticatedPtRoute._addFileChildren(
 
 interface AuthenticatedRouteChildren {
   AuthenticatedFinancasRoute: typeof AuthenticatedFinancasRouteWithChildren
+  AuthenticatedImobiliarioRoute: typeof AuthenticatedImobiliarioRouteWithChildren
   AuthenticatedPtRoute: typeof AuthenticatedPtRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinancasRoute: AuthenticatedFinancasRouteWithChildren,
+  AuthenticatedImobiliarioRoute: AuthenticatedImobiliarioRouteWithChildren,
   AuthenticatedPtRoute: AuthenticatedPtRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
@@ -361,13 +437,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      config_imoveis: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          portais: string[]
+          preco_max: number | null
+          preco_min: number | null
+          quartos_min: number | null
+          tipo: Database["public"]["Enums"]["imo_tipo"]
+          ultima_atualizacao: string | null
+          ultima_visita: string | null
+          updated_at: string
+          zona: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id: string
+          portais?: string[]
+          preco_max?: number | null
+          preco_min?: number | null
+          quartos_min?: number | null
+          tipo?: Database["public"]["Enums"]["imo_tipo"]
+          ultima_atualizacao?: string | null
+          ultima_visita?: string | null
+          updated_at?: string
+          zona?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          portais?: string[]
+          preco_max?: number | null
+          preco_min?: number | null
+          quartos_min?: number | null
+          tipo?: Database["public"]["Enums"]["imo_tipo"]
+          ultima_atualizacao?: string | null
+          ultima_visita?: string | null
+          updated_at?: string
+          zona?: string | null
+        }
+        Relationships: []
+      }
       fin_categories: {
         Row: {
           cor: string
@@ -174,6 +219,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      imoveis: {
+        Row: {
+          area: number | null
+          created_at: string
+          data_encontrado: string
+          id: string
+          localizacao: string | null
+          owner_id: string
+          portal: string
+          preco: number | null
+          quartos: number | null
+          tipo: string | null
+          titulo: string
+          url: string
+          visto: boolean
+        }
+        Insert: {
+          area?: number | null
+          created_at?: string
+          data_encontrado?: string
+          id?: string
+          localizacao?: string | null
+          owner_id: string
+          portal: string
+          preco?: number | null
+          quartos?: number | null
+          tipo?: string | null
+          titulo: string
+          url: string
+          visto?: boolean
+        }
+        Update: {
+          area?: number | null
+          created_at?: string
+          data_encontrado?: string
+          id?: string
+          localizacao?: string | null
+          owner_id?: string
+          portal?: string
+          preco?: number | null
+          quartos?: number | null
+          tipo?: string | null
+          titulo?: string
+          url?: string
+          visto?: boolean
+        }
+        Relationships: []
       }
       pt_clients: {
         Row: {
@@ -355,6 +448,7 @@ export type Database = {
       fin_origem: "manual" | "fixa_gerada" | "pt_payment"
       fin_recorrencia: "mensal" | "anual_provisao"
       fin_tipo: "receita" | "despesa"
+      imo_tipo: "apartamento" | "moradia" | "ambos"
       pt_client_status: "ativo" | "antigo" | "prospect"
       pt_forecast: "continuar" | "parar" | "indefinido"
       pt_service_type: "mensalidade" | "pack"
@@ -488,6 +582,7 @@ export const Constants = {
       fin_origem: ["manual", "fixa_gerada", "pt_payment"],
       fin_recorrencia: ["mensal", "anual_provisao"],
       fin_tipo: ["receita", "despesa"],
+      imo_tipo: ["apartamento", "moradia", "ambos"],
       pt_client_status: ["ativo", "antigo", "prospect"],
       pt_forecast: ["continuar", "parar", "indefinido"],
       pt_service_type: ["mensalidade", "pack"],

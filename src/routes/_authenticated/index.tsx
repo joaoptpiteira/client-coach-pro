@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Dumbbell, LogOut, Plus, Wallet } from "lucide-react";
+import { Dumbbell, Home, LogOut, Plus, Wallet } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 
@@ -32,6 +32,14 @@ const APPS: AppItem[] = [
     description: "Receitas, despesas fixas e variáveis.",
     to: "/financas",
     icon: Wallet,
+    available: true,
+  },
+  {
+    id: "imobiliario",
+    name: "Imobiliário",
+    description: "Anúncios dos portais filtrados em tempo real.",
+    to: "/imobiliario",
+    icon: Home,
     available: true,
   },
 ];
