@@ -349,7 +349,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      fin_seed_default_categories: { Args: never; Returns: undefined }
+      [_ in never]: never
     }
     Enums: {
       fin_origem: "manual" | "fixa_gerada" | "pt_payment"
