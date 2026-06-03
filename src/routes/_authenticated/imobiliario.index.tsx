@@ -57,6 +57,10 @@ function ImoDashboard() {
       const res = await scrape();
       if (!res.ok) toast.error(res.error ?? "Erro");
       else toast.success(`${res.novos} novos · ${res.total} total`);
+      if (res.erros && res.erros.length > 0) {
+        const msg = res.erros.map((e) => `${e.portal}: ${e.status}`).join(" · ");
+        toast.warning(`Portais bloqueados — ${msg}`, { duration: 6000 });
+      }
       await qc.invalidateQueries({ queryKey: ["imo"] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao atualizar");
