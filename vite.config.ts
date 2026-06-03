@@ -10,7 +10,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL ??
 const supabasePublishableKey =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   process.env.SUPABASE_PUBLISHABLE_KEY ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6InR1cGthc2p4c2FwZGNkbXdwa2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzODc3MDQsImV4cCI6MjA5NTk2MzcwNH0.uHXJwuDkfSZqqfwlDwQEZe70WqxK1pzM_Qh9I8G0vMI";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1cGthc2p4c2FwZGNkbXdwa2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzODc3MDQsImV4cCI6MjA5NTk2MzcwNH0.uHXJwuDkfSZqqfwlDwQEZe70WqxK1pzM_Qh9I8G0vMI";
 
 export default defineConfig({
   vite: {
