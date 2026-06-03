@@ -26,6 +26,8 @@ function ImoConfig() {
   const [precoMax, setPrecoMax] = useState("");
   const [quartosMin, setQuartosMin] = useState("");
   const [zona, setZona] = useState("");
+  const [diasRecentes, setDiasRecentes] = useState("7");
+  const [esconderVistos, setEsconderVistos] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -36,6 +38,8 @@ function ImoConfig() {
       setPrecoMax(cfgQ.data.preco_max?.toString() ?? "");
       setQuartosMin(cfgQ.data.quartos_min?.toString() ?? "");
       setZona(cfgQ.data.zona ?? "");
+      setDiasRecentes(cfgQ.data.dias_recentes?.toString() ?? "7");
+      setEsconderVistos(cfgQ.data.esconder_vistos ?? false);
     }
   }, [cfgQ.data]);
 
@@ -58,6 +62,8 @@ function ImoConfig() {
         preco_max: precoMax ? Number(precoMax) : null,
         quartos_min: quartosMin ? Number(quartosMin) : null,
         zona: zona.trim() || null,
+        dias_recentes: Math.max(1, Number(diasRecentes) || 7),
+        esconder_vistos: esconderVistos,
       });
       await qc.invalidateQueries({ queryKey: ["imo"] });
       toast.success("Configuração guardada");
@@ -157,6 +163,27 @@ function ImoConfig() {
           onChange={(e) => setZona(e.target.value)}
           placeholder="ex: Porto, Braga, Lisboa"
         />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Mostrar últimos (dias)</Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={diasRecentes}
+            onChange={(e) => setDiasRecentes(e.target.value)}
+            placeholder="7"
+          />
+        </div>
+        <label className="flex items-end gap-2 pb-2 cursor-pointer">
+          <Checkbox
+            checked={esconderVistos}
+            onCheckedChange={(v) => setEsconderVistos(v === true)}
+          />
+          <span className="text-sm">Esconder já vistos</span>
+        </label>
       </div>
 
       <Button onClick={handleSave} disabled={saving} className="w-full">

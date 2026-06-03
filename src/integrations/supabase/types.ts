@@ -17,6 +17,8 @@ export type Database = {
       config_imoveis: {
         Row: {
           created_at: string
+          dias_recentes: number
+          esconder_vistos: boolean
           id: string
           owner_id: string
           portais: string[]
@@ -31,6 +33,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dias_recentes?: number
+          esconder_vistos?: boolean
           id?: string
           owner_id: string
           portais?: string[]
@@ -45,6 +49,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dias_recentes?: number
+          esconder_vistos?: boolean
           id?: string
           owner_id?: string
           portais?: string[]

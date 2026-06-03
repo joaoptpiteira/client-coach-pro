@@ -53,10 +53,17 @@ export async function saveConfig(patch: ConfigImoveisUpdate): Promise<ConfigImov
 export async function listImoveis(filtros?: {
   portal?: string;
   tipo?: string;
+  diasRecentes?: number | null;
+  esconderVistos?: boolean;
 }): Promise<Imovel[]> {
   let q = supabase.from("imoveis").select("*").order("data_encontrado", { ascending: false }).limit(500);
   if (filtros?.portal) q = q.eq("portal", filtros.portal);
   if (filtros?.tipo) q = q.eq("tipo", filtros.tipo);
+  if (filtros?.diasRecentes && filtros.diasRecentes > 0) {
+    const desde = new Date(Date.now() - filtros.diasRecentes * 86400000).toISOString();
+    q = q.gte("data_encontrado", desde);
+  }
+  if (filtros?.esconderVistos) q = q.eq("visto", false);
   const { data, error } = await q;
   if (error) throw error;
   return data ?? [];

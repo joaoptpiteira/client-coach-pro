@@ -38,8 +38,22 @@ function ImoDashboard() {
 
   const cfgQ = useQuery({ queryKey: ["imo", "config"], queryFn: getConfig });
   const listQ = useQuery({
-    queryKey: ["imo", "list", filtroPortal, filtroTipo],
-    queryFn: () => listImoveis({ portal: filtroPortal || undefined, tipo: filtroTipo || undefined }),
+    queryKey: [
+      "imo",
+      "list",
+      filtroPortal,
+      filtroTipo,
+      cfgQ.data?.dias_recentes ?? null,
+      cfgQ.data?.esconder_vistos ?? false,
+    ],
+    queryFn: () =>
+      listImoveis({
+        portal: filtroPortal || undefined,
+        tipo: filtroTipo || undefined,
+        diasRecentes: cfgQ.data?.dias_recentes ?? null,
+        esconderVistos: cfgQ.data?.esconder_vistos ?? false,
+      }),
+    enabled: cfgQ.isSuccess,
   });
   const novosQ = useQuery({
     queryKey: ["imo", "novos", cfgQ.data?.ultima_visita],
