@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { scrapeForOwner } from "@/lib/imoveis-scrape.functions";
+import { scrapeForOwner } from "@/lib/imoveis-scrape.server";
 
 export const Route = createFileRoute("/api/public/imoveis-scrape")({
   server: {
