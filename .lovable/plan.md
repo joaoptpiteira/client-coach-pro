@@ -1,121 +1,168 @@
-## Objetivo
 
-Reescrever a app de PT para igualar o sistema antigo em funcionalidades, com um visual mais moderno (paleta âmbar modernizada: `#fdfaf3` background, `#1a1a1a` ink, `#c9893a` primary, `#e8b84a` accent), mantendo a simplicidade de um único utilizador (tu).
+## Visão geral
 
-Para não fazer um big bang, divido em **3 fases**. Esta proposta de plano cobre o que fazemos agora (Fase 1) e o que fica para depois.
+App pessoal de finanças integrada no mesmo JP HUB. Bottom nav próprio, paleta consistente com a app PT. Foco em **simplicidade de input** (porque sabemos que o que mata estas apps é o atrito de registar).
 
----
-
-## Decisões-chave de UX (das tuas screenshots)
-
-- **Bottom nav fixo** com 4 secções: Dashboard · Clientes · Pagamentos · Treinos. Substitui o "Hub" atual.
-- **3 estados de cliente** em vez de 2: `ativo`, `antigo`, `prospect` (prospect é alguém que ainda não começou, sem valores).
-- **Frequência semanal** (1x/2x/3x/4x) substitui o cálculo manual de "treinos pagos" — o nº de treinos/mês deriva da frequência.
-- **Mês de início** por cliente → permite o histórico mensal não considerar como "não pago" meses anteriores ao início.
-- **Decomposição simplificada**: Valor total acordado − Ginásio = Valor real PT. Acompanhamento online é separado. Desconto afiliado aplica-se por cima.
-- **Pagamentos são eventos** (não um campo no cliente): cada registo tem data, valor, mês de referência. Isto dá o histórico mensal automático.
-- **Treinos dados** são eventos diários (não um contador): permite a vista "Terça-feira 2 de Junho" com botão "Treino dado".
-- **"Vai parar"** marca o cliente para sair no próximo mês — aparece destacado no dashboard.
+Igual ao PT, divido em **fases**. Aqui vai a Fase 1 que cobre 80% do uso diário; Património e investimentos ficam para Fase 2.
 
 ---
 
-## Fase 1 — Esqueleto + Clientes + Dashboard (este pedido)
+## Decisões-chave (das tuas respostas)
 
-### Schema (migração)
+- **Modo híbrido**: despesas fixas (renda, créditos, subscrições...) são lançadas **automaticamente** todo mês; despesas variáveis (gasolina, comida, lazer) tu lanças à mão quando quiseres, podem ser transação única ou total mensal.
+- **Despesas anuais** (IUC, seguro carro): registas o valor anual + mês de pagamento → a app divide por 12 e mostra-te o "custo mensal real". Internamente continua a ser uma despesa fixa mensal, com uma flag a dizer que é provisão de anual.
+- **Receita PT entra automaticamente**: cada pagamento registado em `pt_payments` aparece como linha de receita no mês correspondente (sem duplicação na BD — leitura cruzada).
+- **Categorias fixas predefinidas** com possibilidade de adicionar próprias.
+- **Mês como unidade central**: dashboard, listagens e seletor mensal igual ao da página de pagamentos PT.
 
-Alterações a `pt_clients`:
-- adicionar `telefone` (text, opcional)
-- adicionar `status` enum `ativo|antigo|prospect` (substitui o `ativo` boolean)
-- adicionar `frequencia_semanal` (int 0–7, default 2)
-- adicionar `mes_inicio` (date, opcional)
-- adicionar `valor_ginasio_por_treino` (numeric) — para calcular Valor real PT
-- adicionar `valor_acompanhamento_online` (numeric, default 0)
-- adicionar `desconto_afiliado` (numeric, default 0)
-- adicionar `indicado_por` (text, opcional)
-- remover/deprecar `treinos_pagos`, `treinos_dados`, `valor_attivo` (substituídos por frequência + tabelas de pagamentos/treinos na Fase 2/3)
+---
 
-Nova tabela `pt_payments`:
-- `id`, `owner_id`, `client_id`, `data` (date), `mes_referencia` (text YYYY-MM), `valor_pago` (numeric), `valor_pt` (numeric, calculado), `notas`
+## Schema (1 migração)
 
-Nova tabela `pt_trainings`:
-- `id`, `owner_id`, `client_id`, `data` (date), `notas`
+### Tabelas novas
 
-Todas com RLS por `owner_id = auth.uid()` + GRANTs.
+`fin_categories` — categorias de receita/despesa
+- `id`, `owner_id`, `nome`, `tipo` (`receita`|`despesa`), `cor` (text), `icone` (text), `ordem` (int)
+- Semeadas por defeito: Casa, Carro, Alimentação, Gasolina, Subscrições, Créditos, Saúde, Lazer, Outros (despesa); Salário, PT, Outros (receita).
 
-### Rotas
+`fin_fixed_expenses` — despesas recorrentes
+- `id`, `owner_id`, `nome`, `categoria_id`, `valor_mensal` (numeric), `dia_pagamento` (int 1–31, opcional)
+- `tipo_recorrencia` enum `mensal`|`anual_provisao` (anual = divide por 12 mas continua a entrar todo mês)
+- `valor_anual` (numeric, só quando `anual_provisao`), `mes_pagamento_anual` (int 1–12, informativo)
+- `mes_inicio` (date), `mes_fim` (date, opcional para subscrições canceladas), `ativo` (bool)
+- `notas`
+
+`fin_transactions` — lançamentos avulsos (variáveis e ajustes)
+- `id`, `owner_id`, `data` (date), `mes_referencia` (text YYYY-MM), `tipo` (`receita`|`despesa`), `categoria_id`, `valor` (numeric, positivo), `descricao` (text), `notas`
+- `origem` enum `manual`|`fixa_gerada`|`pt_payment` — `pt_payment` nunca é criada manualmente, é uma view; mas guardamos a enum para flexibilidade futura.
+
+Todas com RLS por `auth.uid() = owner_id` + GRANTs (`authenticated` + `service_role`, sem `anon`). Trigger `set_updated_at` igual ao das tabelas PT.
+
+### Sem duplicação de PT
+Os pagamentos PT **não** são copiados para `fin_transactions`. A query do dashboard/listagem faz `UNION` entre `fin_transactions` (receitas/despesas) e `pt_payments` (lidos como receita categoria "PT"). Isto evita inconsistências e mantém a verdade única na tabela PT.
+
+---
+
+## Geração automática de despesas fixas
+
+Não criamos linhas físicas todo mês (mais simples). Em vez disso, ao ler um mês:
+- Lista todas as `fin_fixed_expenses` ativas (`mes_inicio <= mês <= mes_fim || null`)
+- Soma com as `fin_transactions` desse mês
+- Soma com os `pt_payments` desse mês (como receita PT)
+
+→ "lançamento automático" é virtual, calculado on-read. Vantagem: editar uma despesa fixa atualiza retroativamente sem migrações de dados.
+
+Se quiseres "marcar como paga" uma despesa fixa num mês específico (ex: confirmar que a renda saiu), há um botão que cria uma `fin_transactions` com `origem='fixa_gerada'` e essa substitui a virtual nesse mês — fica registo da data real.
+
+---
+
+## Rotas
 
 ```
-/_authenticated/pt.tsx              → layout com bottom nav + Outlet
-/_authenticated/pt/index.tsx        → Dashboard
-/_authenticated/pt/clients.tsx      → Clientes (3 tabs: Ativos/Antigos/Prospects)
-/_authenticated/pt/payments.tsx     → placeholder "Em breve" (Fase 2)
-/_authenticated/pt/trainings.tsx    → placeholder "Em breve" (Fase 3)
+/_authenticated/financas.tsx              → layout com bottom nav próprio + Outlet
+/_authenticated/financas/index.tsx        → Dashboard mensal
+/_authenticated/financas/despesas.tsx     → Transações variáveis (lista + adicionar)
+/_authenticated/financas/fixas.tsx        → Gestão de despesas fixas
+/_authenticated/financas/categorias.tsx   → CRUD de categorias (página secundária)
 ```
 
-Remover o "Hub" — abrir direto no Dashboard PT após login.
+Bottom nav: **Dashboard · Variáveis · Fixas · Categorias**. Botão "voltar ao hub" e logout iguais ao PT.
 
-### Dashboard (Fase 1, sem pagamentos reais ainda)
-
-Mostra com base nos dados de clientes:
-- Cartão grande com mês atual: contagem de ativos × valor previsto total.
-- Cartão "Previsão próximo mês": soma do `forecast_valor` ou do valor acordado dos que ficam.
-- Grid de stats: nº Ativos · Mensalidade · Pack · Prospects · "Vai parar".
-- Bloco "Descontos de afiliado ativos".
-- Bloco "Vai parar este mês".
-
-(Os blocos "recebido / falta pagar / treinos dados" entram na Fase 2/3 quando existirem pagamentos e treinos.)
-
-### Clientes (Fase 1 redesenhado)
-
-- 3 tabs: Ativos / Antigos / Prospects.
-- Card mais limpo: nome em destaque, telefone (com ícone), pills (Mensal/Pack + Frequência), badge de previsão ("Vai continuar"/"Vai parar"), pill âmbar com desconto afiliado se existir.
-- Formulário com seções: Estado · Identidade · Mês de início · Plano (tipo + frequência + valor + decomposição) · Indicado por · Previsão.
-- Ações no card de edição: Guardar · Suspender (= passa a antigo) · Eliminar.
-
-### Design tokens
-
-Atualizar `src/styles.css`:
-- `--background: oklch(0.985 0.012 85)` (#fdfaf3)
-- `--foreground: oklch(0.18 0 0)` (#1a1a1a)
-- `--primary: oklch(0.68 0.13 65)` (#c9893a)
-- `--accent: oklch(0.82 0.13 80)` (#e8b84a)
-- `--surface` cards brancos com sombra suave, borda quase invisível
-- raio `0.875rem` nos cards, `1.25rem` nos cartões grandes
-- tipografia: continuar com display existente ou trocar para um par mais moderno (proponho manter o display atual se já gostas; podemos refinar depois)
+A página `/` (hub) passa a ter 2 cartões grandes: **PT Manager** e **Finanças**.
 
 ---
 
-## Fase 2 — Pagamentos (próxima iteração)
+## Dashboard mensal (página principal)
 
-- Página `/pt/payments` com navegação mensal (← Jun 2026 →).
-- Cartão "Total recebido (PT)" + contagem pagos/em falta.
-- Stats: treinos vendidos · treinos parados.
-- Lista de pagamentos do mês com eliminar.
-- Modal "Registar Pagamento" com o breakdown que mostraste (acordado · ginásio · valor real PT · desc. afiliado · a pagar) + input editável.
-- Dashboard passa a mostrar "recebido este mês" + "falta receber" + histórico mensal real.
+Seletor de mês no topo (← Jun 2026 →), igual ao da Reports.
 
-## Fase 3 — Treinos
+**Cartão grande** — saldo do mês: Receitas − Despesas = X €, com indicador vs mês anterior.
 
-- Página `/pt/trainings` com navegação diária.
-- Lista de clientes que treinam nesse dia (derivado da frequência semanal + dias da semana por cliente — vamos precisar de adicionar isto).
-- Botão "Treino dado" → cria registo em `pt_trainings`.
-- Dashboard ganha contador "treinos dados este mês".
+**Grid de 4 stats**:
+- Receitas totais (com breakdown: PT · Salário · Outros)
+- Despesas totais (com breakdown: Fixas · Variáveis)
+- Despesas fixas mensais (soma para referência rápida)
+- Provisão anual mensal (quanto estás a "guardar" virtualmente para IUC/seguros)
 
----
+**Bloco "Por categoria"** — barras horizontais ordenadas por valor, mostra % do total e € por categoria de despesa.
 
-## Aspetos técnicos
+**Bloco "Top 5 despesas variáveis"** do mês.
 
-- Migração SQL única para todas as alterações de schema da Fase 1 (com GRANTs e RLS).
-- Lógica de cálculo (valor real PT, restantes do mês) em `src/lib/pt-clients.ts` como funções puras testáveis.
-- Bottom nav num componente reutilizável `src/components/pt/BottomNav.tsx`.
-- Manter Lovable Cloud (gratuito) + Google sign-in já existente.
+**Bloco "Próximas despesas fixas"** — lista as fixas com `dia_pagamento` >= hoje, ajuda a antecipar.
+
+**Mini gráfico** — barras dos últimos 6 meses: receitas vs despesas (reutilizar Recharts).
 
 ---
 
-## O que **não** está incluído
+## Página "Variáveis"
 
-- Pagamentos reais (Fase 2).
-- Registo de treinos diário (Fase 3).
-- Notificações, exportações, multi-utilizador.
+Lista de `fin_transactions` do mês selecionado (manual + fixa_gerada). Agrupadas por dia.
 
-Confirma este plano (ou pede ajustes) e avanço com a migração + código da Fase 1.
+Botão flutuante "+" → modal "Nova transação":
+- Toggle Despesa/Receita
+- Valor (input grande, foco automático)
+- Categoria (pills com ícone+cor)
+- Data (default hoje)
+- Descrição (opcional)
+
+Swipe/long-press → eliminar.
+
+---
+
+## Página "Fixas"
+
+Lista das `fin_fixed_expenses` agrupadas por categoria, mostrando valor mensal real (incluindo provisões anuais convertidas).
+
+Total no topo: "Compromisso mensal fixo: X €".
+
+Form "Nova despesa fixa":
+- Nome, categoria, dia de pagamento
+- Toggle "Pagamento anual" → mostra `valor_anual` + `mês de pagamento`, esconde `valor_mensal` (calcula = valor_anual/12)
+- Mês de início, opção "tem fim previsto" → mês de fim
+
+Editar/Eliminar inline.
+
+---
+
+## Lib functions (frontend)
+
+`src/lib/fin-categories.ts` — CRUD categorias
+`src/lib/fin-fixed.ts` — CRUD despesas fixas + cálculo do valor mensal efetivo
+`src/lib/fin-transactions.ts` — CRUD transações
+`src/lib/fin-month.ts` — função composta `getMonthOverview(ym)` que devolve:
+  ```ts
+  { receitas: { pt, manual, total }, despesas: { fixas, variaveis, provisoes, total }, saldo, porCategoria: [...], transacoes: [...] }
+  ```
+  Faz reads paralelos das 4 fontes (`fin_transactions`, `fin_fixed_expenses`, `pt_payments`, `fin_categories`) e combina.
+
+---
+
+## Design tokens
+
+Reutilizar o que já existe. Adicionar:
+- `--receita` (verde sóbrio compatível com a paleta âmbar)
+- `--despesa` (vermelho terra)
+- `--provisao` (laranja/dourado)
+
+Sem novas fontes. Sem novos pacotes (Recharts já está).
+
+---
+
+## Fase 2 (futuro, não agora)
+
+- Património: contas bancárias + investimentos + cripto (snapshot mensal)
+- Objetivos de poupança com progresso
+- Comparativos anuais
+- Exportação CSV/PDF
+- Lembretes/notificações de despesas fixas com `dia_pagamento` próximo
+
+---
+
+## O que **não** está incluído na Fase 1
+
+- Património / investimentos / cripto
+- Múltiplas contas bancárias
+- Importação de extratos bancários
+- Orçamentos com tetos por categoria
+
+Confirma o plano (ou ajusta) e avanço com a migração + código.
