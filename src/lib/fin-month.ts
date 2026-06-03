@@ -2,6 +2,7 @@ import { listCategories, type FinCategory } from "./fin-categories";
 import { listFixed, valorMensalEfetivo, ativoNoMes, type FinFixed } from "./fin-fixed";
 import { listTransactionsByMonth, type FinTransaction } from "./fin-transactions";
 import { listPaymentsByMonth, type PtPayment } from "./pt-payments";
+import { listCredits } from "./fin-credits";
 
 export type CategoryBreakdown = {
   id: string | null;
