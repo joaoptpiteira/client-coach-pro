@@ -89,7 +89,7 @@ function PaymentsPage() {
         <Card className="p-4 bg-surface border-border">
           <p className="text-sm font-semibold flex items-center gap-2 mb-3">
             <AlertCircle className="w-4 h-4 text-destructive" />
-            Falta receber · {fmtEUR(totalFalta)}
+            Falta receber · <span className="privacy-blur">{fmtEUR(totalFalta)}</span>
           </p>
           <ul className="space-y-1.5">
             {emFalta.map((c) => (
