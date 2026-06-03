@@ -274,10 +274,10 @@ function ReportsPage() {
         </div>
       </Card>
 
-      {/* Novos vs saídas — mês atual */}
+      {/* Novos vs saídas — mês selecionado */}
       <Card className="p-5 bg-surface border-border">
         <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-medium mb-1">
-          Crescimento · este mês
+          Crescimento · {ymLabelLong(selectedMonth)}
         </p>
         <p className="font-display text-2xl font-semibold mb-4">
           {netGrowth >= 0 ? "+" : ""}{netGrowth}
