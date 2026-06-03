@@ -79,7 +79,7 @@ function PaymentsPage() {
         <p className="text-[11px] uppercase tracking-widest text-accent-foreground/70 font-semibold">
           Total recebido
         </p>
-        <p className="font-display text-4xl text-primary mt-1">{fmtEUR(totalRecebido)}</p>
+        <p className="font-display text-4xl text-primary mt-1 privacy-blur">{fmtEUR(totalRecebido)}</p>
         <p className="text-xs text-muted-foreground mt-2">
           {payments.length} pagamento{payments.length === 1 ? "" : "s"} · {ativos.length - emFalta.length}/{ativos.length} clientes pagos
         </p>
@@ -89,7 +89,7 @@ function PaymentsPage() {
         <Card className="p-4 bg-surface border-border">
           <p className="text-sm font-semibold flex items-center gap-2 mb-3">
             <AlertCircle className="w-4 h-4 text-destructive" />
-            Falta receber · {fmtEUR(totalFalta)}
+            Falta receber · <span className="privacy-blur">{fmtEUR(totalFalta)}</span>
           </p>
           <ul className="space-y-1.5">
             {emFalta.map((c) => (
