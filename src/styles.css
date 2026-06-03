@@ -115,7 +115,8 @@
     font-weight: 600;
   }
 
-  html.privacy-on .font-mono {
+  html.privacy-on .font-mono,
+  html.privacy-on .privacy-blur {
     filter: blur(6px);
     user-select: none;
     transition: filter 120ms ease;
