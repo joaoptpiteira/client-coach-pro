@@ -77,17 +77,17 @@ function DashboardPage() {
           Saldo do mês
         </p>
         <p
-          className={`font-display text-4xl mt-1 ${data.saldo >= 0 ? "text-primary" : "text-destructive"}`}
+          className={`font-display text-4xl mt-1 privacy-blur ${data.saldo >= 0 ? "text-primary" : "text-destructive"}`}
         >
           {data.saldo >= 0 ? "+" : ""}
           {fmtEUR(data.saldo)}
         </p>
         <div className="flex gap-4 mt-3 text-xs">
-          <span className="text-muted-foreground">
+          <span className="text-muted-foreground privacy-blur">
             <TrendingUp className="w-3 h-3 inline mr-1 text-[var(--color-success,#5a8a5a)]" />
             {fmtEUR(data.receitas.total)}
           </span>
-          <span className="text-muted-foreground">
+          <span className="text-muted-foreground privacy-blur">
             <TrendingDown className="w-3 h-3 inline mr-1 text-destructive" />
             {fmtEUR(data.despesas.total)}
           </span>
