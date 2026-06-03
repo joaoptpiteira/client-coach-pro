@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Dumbbell, LogOut, Plus, Wallet } from "lucide-react";
+import { Dumbbell, Home, LogOut, Plus, Wallet } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 
