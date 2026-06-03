@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, Power } from "lucide-react";
+import { Plus, Pencil, Trash2, Power, Landmark, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,10 @@ import { toast } from "sonner";
 import { fmtEUR } from "@/lib/fin-shared";
 import { listFixed, deleteFixed, updateFixed, valorMensalEfetivo, type FinFixed } from "@/lib/fin-fixed";
 import { listCategories } from "@/lib/fin-categories";
+import { listCredits, type FinCredit } from "@/lib/fin-credits";
+import { listTransactionsByMonth } from "@/lib/fin-transactions";
 import { FixedExpenseDialog } from "@/components/financas/FixedExpenseDialog";
+import { CreditPaymentDialog } from "@/components/financas/CreditPaymentDialog";
 
 export const Route = createFileRoute("/_authenticated/financas/fixas")({
   head: () => ({ meta: [{ title: "Finanças · Fixas" }] }),
