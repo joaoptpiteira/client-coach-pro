@@ -5,7 +5,7 @@ const items = [
   { to: "/financas", label: "Geral", icon: LayoutGrid, exact: true },
   { to: "/financas/variaveis", label: "Variáveis", icon: ArrowDownUp, exact: false },
   { to: "/financas/fixas", label: "Fixas", icon: Repeat, exact: false },
-  { to: "/financas/dividas", label: "Dívidas", icon: HandCoins, exact: false },
+  { to: "/financas/dividas", label: "Dív & Créd", icon: HandCoins, exact: false },
   { to: "/financas/categorias", label: "Categorias", icon: Tag, exact: false },
 ] as const;
 
