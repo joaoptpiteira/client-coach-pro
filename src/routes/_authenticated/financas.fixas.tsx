@@ -111,7 +111,7 @@ function FixasPage() {
         </p>
         <p className="font-display text-4xl text-primary mt-1 privacy-blur">{fmtEUR(totalMensal)}</p>
         <p className="text-xs text-muted-foreground mt-2 privacy-blur">
-          Inclui {fmtEUR(totalProvisoes)} de provisões anuais
+          Fixas {fmtEUR(totalFixasMensal)} · Créditos {fmtEUR(totalCreditos)} · Provisões {fmtEUR(totalProvisoes)}
         </p>
       </Card>
 
