@@ -41,6 +41,12 @@ function lastMonths(n: number): string[] {
   return out;
 }
 
+const ymLabelLong = (ym: string) => {
+  const [y, m] = ym.split("-").map(Number);
+  return new Intl.DateTimeFormat("pt-PT", { month: "long", year: "numeric" })
+    .format(new Date(y, (m ?? 1) - 1, 1));
+};
+
 function ReportsPage() {
   const { data: clients = [], isLoading: l1 } = useQuery({
     queryKey: ["pt_clients"], queryFn: listClients,
