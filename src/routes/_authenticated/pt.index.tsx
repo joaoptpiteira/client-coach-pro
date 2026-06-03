@@ -86,8 +86,8 @@ function DashboardPage() {
             />
           </div>
           <div className="flex items-center justify-between mt-2.5 text-[11px] text-muted-foreground">
-            <span>{ativos.length - emFalta.length}/{ativos.length} pagos · {fmtEUR(previstoMes)}</span>
-            {falta > 0 && <span className="text-destructive font-medium">−{fmtEUR(falta)}</span>}
+            <span className="privacy-blur">{ativos.length - emFalta.length}/{ativos.length} pagos · {fmtEUR(previstoMes)}</span>
+            {falta > 0 && <span className="text-destructive font-medium privacy-blur">−{fmtEUR(falta)}</span>}
           </div>
         </div>
       </Card>
