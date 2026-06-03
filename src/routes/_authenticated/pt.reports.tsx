@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { Card } from "@/components/ui/card";
 import {
-  Users, TrendingUp, Dumbbell, CreditCard, UserPlus, UserMinus, Gift, Trophy, Activity, Wallet,
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from "@/components/ui/select";
+import {
+  Users, TrendingUp, Dumbbell, CreditCard, UserPlus, UserMinus, Gift, Trophy, Activity, Wallet, CalendarDays,
 } from "lucide-react";
 import { listClients, fmtEUR, valorAPagar, type PtClient } from "@/lib/pt-clients";
 import { listAllPayments } from "@/lib/pt-payments";
