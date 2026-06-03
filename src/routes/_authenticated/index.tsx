@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Dumbbell, LogOut, Plus } from "lucide-react";
+import { Dumbbell, LogOut, Plus, Wallet } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 
@@ -26,7 +26,16 @@ const APPS: AppItem[] = [
     icon: Dumbbell,
     available: true,
   },
+  {
+    id: "financas",
+    name: "Finanças",
+    description: "Receitas, despesas fixas e variáveis.",
+    to: "/financas",
+    icon: Wallet,
+    available: true,
+  },
 ];
+
 
 function userDisplayName(user: ReturnType<typeof useAuth>["user"]): string {
   if (!user) return "";

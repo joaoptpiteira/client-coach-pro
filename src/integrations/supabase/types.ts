@@ -14,6 +14,167 @@ export type Database = {
   }
   public: {
     Tables: {
+      fin_categories: {
+        Row: {
+          cor: string
+          created_at: string
+          icone: string
+          id: string
+          nome: string
+          ordem: number
+          owner_id: string
+          tipo: Database["public"]["Enums"]["fin_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          icone?: string
+          id?: string
+          nome: string
+          ordem?: number
+          owner_id: string
+          tipo: Database["public"]["Enums"]["fin_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          icone?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          owner_id?: string
+          tipo?: Database["public"]["Enums"]["fin_tipo"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fin_fixed_expenses: {
+        Row: {
+          ativo: boolean
+          categoria_id: string | null
+          created_at: string
+          dia_pagamento: number | null
+          id: string
+          mes_fim: string | null
+          mes_inicio: string | null
+          mes_pagamento_anual: number | null
+          nome: string
+          notas: string | null
+          owner_id: string
+          tipo_recorrencia: Database["public"]["Enums"]["fin_recorrencia"]
+          updated_at: string
+          valor_anual: number | null
+          valor_mensal: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria_id?: string | null
+          created_at?: string
+          dia_pagamento?: number | null
+          id?: string
+          mes_fim?: string | null
+          mes_inicio?: string | null
+          mes_pagamento_anual?: number | null
+          nome: string
+          notas?: string | null
+          owner_id: string
+          tipo_recorrencia?: Database["public"]["Enums"]["fin_recorrencia"]
+          updated_at?: string
+          valor_anual?: number | null
+          valor_mensal?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria_id?: string | null
+          created_at?: string
+          dia_pagamento?: number | null
+          id?: string
+          mes_fim?: string | null
+          mes_inicio?: string | null
+          mes_pagamento_anual?: number | null
+          nome?: string
+          notas?: string | null
+          owner_id?: string
+          tipo_recorrencia?: Database["public"]["Enums"]["fin_recorrencia"]
+          updated_at?: string
+          valor_anual?: number | null
+          valor_mensal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fin_fixed_expenses_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "fin_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fin_transactions: {
+        Row: {
+          categoria_id: string | null
+          created_at: string
+          data: string
+          descricao: string | null
+          fixed_expense_id: string | null
+          id: string
+          mes_referencia: string
+          notas: string | null
+          origem: Database["public"]["Enums"]["fin_origem"]
+          owner_id: string
+          tipo: Database["public"]["Enums"]["fin_tipo"]
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          categoria_id?: string | null
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          fixed_expense_id?: string | null
+          id?: string
+          mes_referencia: string
+          notas?: string | null
+          origem?: Database["public"]["Enums"]["fin_origem"]
+          owner_id: string
+          tipo: Database["public"]["Enums"]["fin_tipo"]
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          categoria_id?: string | null
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          fixed_expense_id?: string | null
+          id?: string
+          mes_referencia?: string
+          notas?: string | null
+          origem?: Database["public"]["Enums"]["fin_origem"]
+          owner_id?: string
+          tipo?: Database["public"]["Enums"]["fin_tipo"]
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fin_transactions_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "fin_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fin_transactions_fixed_expense_id_fkey"
+            columns: ["fixed_expense_id"]
+            isOneToOne: false
+            referencedRelation: "fin_fixed_expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pt_clients: {
         Row: {
           ativo: boolean
@@ -191,6 +352,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      fin_origem: "manual" | "fixa_gerada" | "pt_payment"
+      fin_recorrencia: "mensal" | "anual_provisao"
+      fin_tipo: "receita" | "despesa"
       pt_client_status: "ativo" | "antigo" | "prospect"
       pt_forecast: "continuar" | "parar" | "indefinido"
       pt_service_type: "mensalidade" | "pack"
@@ -321,6 +485,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      fin_origem: ["manual", "fixa_gerada", "pt_payment"],
+      fin_recorrencia: ["mensal", "anual_provisao"],
+      fin_tipo: ["receita", "despesa"],
       pt_client_status: ["ativo", "antigo", "prospect"],
       pt_forecast: ["continuar", "parar", "indefinido"],
       pt_service_type: ["mensalidade", "pack"],
