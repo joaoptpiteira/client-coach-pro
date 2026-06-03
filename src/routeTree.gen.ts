@@ -18,6 +18,7 @@ import { Route as AuthenticatedFinancasRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPtIndexRouteImport } from './routes/_authenticated/pt.index'
 import { Route as AuthenticatedImobiliarioIndexRouteImport } from './routes/_authenticated/imobiliario.index'
 import { Route as AuthenticatedFinancasIndexRouteImport } from './routes/_authenticated/financas.index'
+import { Route as ApiPublicImoveisScrapeRouteImport } from './routes/api/public/imoveis-scrape'
 import { Route as AuthenticatedPtTrainingsRouteImport } from './routes/_authenticated/pt.trainings'
 import { Route as AuthenticatedPtReportsRouteImport } from './routes/_authenticated/pt.reports'
 import { Route as AuthenticatedPtPaymentsRouteImport } from './routes/_authenticated/pt.payments'
@@ -74,6 +75,11 @@ const AuthenticatedFinancasIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedFinancasRoute,
   } as any)
+const ApiPublicImoveisScrapeRoute = ApiPublicImoveisScrapeRouteImport.update({
+  id: '/api/public/imoveis-scrape',
+  path: '/api/public/imoveis-scrape',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedPtTrainingsRoute =
   AuthenticatedPtTrainingsRouteImport.update({
     id: '/trainings',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/pt/payments': typeof AuthenticatedPtPaymentsRoute
   '/pt/reports': typeof AuthenticatedPtReportsRoute
   '/pt/trainings': typeof AuthenticatedPtTrainingsRoute
+  '/api/public/imoveis-scrape': typeof ApiPublicImoveisScrapeRoute
   '/financas/': typeof AuthenticatedFinancasIndexRoute
   '/imobiliario/': typeof AuthenticatedImobiliarioIndexRoute
   '/pt/': typeof AuthenticatedPtIndexRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/pt/payments': typeof AuthenticatedPtPaymentsRoute
   '/pt/reports': typeof AuthenticatedPtReportsRoute
   '/pt/trainings': typeof AuthenticatedPtTrainingsRoute
+  '/api/public/imoveis-scrape': typeof ApiPublicImoveisScrapeRoute
   '/financas': typeof AuthenticatedFinancasIndexRoute
   '/imobiliario': typeof AuthenticatedImobiliarioIndexRoute
   '/pt': typeof AuthenticatedPtIndexRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/_authenticated/pt/payments': typeof AuthenticatedPtPaymentsRoute
   '/_authenticated/pt/reports': typeof AuthenticatedPtReportsRoute
   '/_authenticated/pt/trainings': typeof AuthenticatedPtTrainingsRoute
+  '/api/public/imoveis-scrape': typeof ApiPublicImoveisScrapeRoute
   '/_authenticated/financas/': typeof AuthenticatedFinancasIndexRoute
   '/_authenticated/imobiliario/': typeof AuthenticatedImobiliarioIndexRoute
   '/_authenticated/pt/': typeof AuthenticatedPtIndexRoute
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/pt/payments'
     | '/pt/reports'
     | '/pt/trainings'
+    | '/api/public/imoveis-scrape'
     | '/financas/'
     | '/imobiliario/'
     | '/pt/'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/pt/payments'
     | '/pt/reports'
     | '/pt/trainings'
+    | '/api/public/imoveis-scrape'
     | '/financas'
     | '/imobiliario'
     | '/pt'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pt/payments'
     | '/_authenticated/pt/reports'
     | '/_authenticated/pt/trainings'
+    | '/api/public/imoveis-scrape'
     | '/_authenticated/financas/'
     | '/_authenticated/imobiliario/'
     | '/_authenticated/pt/'
@@ -231,6 +243,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicImoveisScrapeRoute: typeof ApiPublicImoveisScrapeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -297,6 +310,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/financas/'
       preLoaderRoute: typeof AuthenticatedFinancasIndexRouteImport
       parentRoute: typeof AuthenticatedFinancasRoute
+    }
+    '/api/public/imoveis-scrape': {
+      id: '/api/public/imoveis-scrape'
+      path: '/api/public/imoveis-scrape'
+      fullPath: '/api/public/imoveis-scrape'
+      preLoaderRoute: typeof ApiPublicImoveisScrapeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/pt/trainings': {
       id: '/_authenticated/pt/trainings'
@@ -433,7 +453,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicImoveisScrapeRoute: ApiPublicImoveisScrapeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
