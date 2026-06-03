@@ -224,8 +224,8 @@ function ReportsPage() {
         <Stat icon={UserMinus} value={saidasMes} label={`Saídas · ${ymLabel(selectedMonth)}`} tone={saidasMes > 0 ? "danger" : "default"} />
         <Stat icon={Dumbbell} value={treinos12m} label="Treinos · 12m" />
         <Stat icon={CreditCard} value={payments.length} label="Pagamentos" />
-        <Stat icon={Wallet} value={fmtEUR(ticketMedio)} label="Ticket médio" small />
-        <Stat icon={TrendingUp} value={fmtEUR(previstoMes)} label="Previsto mês" small />
+        <Stat icon={Wallet} value={fmtEUR(ticketMedio)} label="Ticket médio" small blur />
+        <Stat icon={TrendingUp} value={fmtEUR(previstoMes)} label="Previsto mês" small blur />
       </div>
 
       {/* Receita por mês */}
