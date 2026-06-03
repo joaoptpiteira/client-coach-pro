@@ -62,7 +62,15 @@ export async function getMonthOverview(ym: string): Promise<MonthOverview> {
     .filter((f) => f.tipo_recorrencia === "anual_provisao")
     .reduce((s, f) => s + valorMensalEfetivo(f), 0);
 
-  const fixas = fixasVirtuaisTotal + fixasMaterializadasTotal;
+  // Créditos virtuais: prestação dos créditos ativos sem tx neste mês
+  const creditTxIds = new Set(
+    txDespesas.filter((t) => t.credit_id).map((t) => t.credit_id as string),
+  );
+  const creditosVirtuaisTotal = credits
+    .filter((c) => c.ativo && !creditTxIds.has(c.id))
+    .reduce((s, c) => s + Number(c.prestacao_mensal ?? 0), 0);
+
+  const fixas = fixasVirtuaisTotal + fixasMaterializadasTotal + creditosVirtuaisTotal;
   const despesasTotal = fixas + provisoes + variaveis;
 
   // Breakdown por categoria (despesas)
