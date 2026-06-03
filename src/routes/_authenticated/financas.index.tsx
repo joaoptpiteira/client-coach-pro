@@ -269,8 +269,8 @@ function StatCard({
       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
         <Icon className={`w-3 h-3 ${colorClass}`} /> {label}
       </div>
-      <p className={`font-display text-xl mt-1 ${colorClass}`}>{fmtEURcompact(value)}</p>
-      {sub && <p className="text-[10px] text-muted-foreground mt-1 truncate">{sub}</p>}
+      <p className={`font-display text-xl mt-1 privacy-blur ${colorClass}`}>{fmtEURcompact(value)}</p>
+      {sub && <p className="text-[10px] text-muted-foreground mt-1 truncate privacy-blur">{sub}</p>}
     </Card>
   );
 }
