@@ -27,6 +27,7 @@ import { Route as AuthenticatedImobiliarioConfigRouteImport } from './routes/_au
 import { Route as AuthenticatedFinancasVariaveisRouteImport } from './routes/_authenticated/financas.variaveis'
 import { Route as AuthenticatedFinancasFixasRouteImport } from './routes/_authenticated/financas.fixas'
 import { Route as AuthenticatedFinancasDividasRouteImport } from './routes/_authenticated/financas.dividas'
+import { Route as AuthenticatedFinancasCreditosRouteImport } from './routes/_authenticated/financas.creditos'
 import { Route as AuthenticatedFinancasCategoriasRouteImport } from './routes/_authenticated/financas.categorias'
 
 const LoginRoute = LoginRouteImport.update({
@@ -126,6 +127,12 @@ const AuthenticatedFinancasDividasRoute =
     path: '/dividas',
     getParentRoute: () => AuthenticatedFinancasRoute,
   } as any)
+const AuthenticatedFinancasCreditosRoute =
+  AuthenticatedFinancasCreditosRouteImport.update({
+    id: '/creditos',
+    path: '/creditos',
+    getParentRoute: () => AuthenticatedFinancasRoute,
+  } as any)
 const AuthenticatedFinancasCategoriasRoute =
   AuthenticatedFinancasCategoriasRouteImport.update({
     id: '/categorias',
@@ -140,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/imobiliario': typeof AuthenticatedImobiliarioRouteWithChildren
   '/pt': typeof AuthenticatedPtRouteWithChildren
   '/financas/categorias': typeof AuthenticatedFinancasCategoriasRoute
+  '/financas/creditos': typeof AuthenticatedFinancasCreditosRoute
   '/financas/dividas': typeof AuthenticatedFinancasDividasRoute
   '/financas/fixas': typeof AuthenticatedFinancasFixasRoute
   '/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
@@ -157,6 +165,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof AuthenticatedIndexRoute
   '/financas/categorias': typeof AuthenticatedFinancasCategoriasRoute
+  '/financas/creditos': typeof AuthenticatedFinancasCreditosRoute
   '/financas/dividas': typeof AuthenticatedFinancasDividasRoute
   '/financas/fixas': typeof AuthenticatedFinancasFixasRoute
   '/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
@@ -179,6 +188,7 @@ export interface FileRoutesById {
   '/_authenticated/pt': typeof AuthenticatedPtRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/financas/categorias': typeof AuthenticatedFinancasCategoriasRoute
+  '/_authenticated/financas/creditos': typeof AuthenticatedFinancasCreditosRoute
   '/_authenticated/financas/dividas': typeof AuthenticatedFinancasDividasRoute
   '/_authenticated/financas/fixas': typeof AuthenticatedFinancasFixasRoute
   '/_authenticated/financas/variaveis': typeof AuthenticatedFinancasVariaveisRoute
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/imobiliario'
     | '/pt'
     | '/financas/categorias'
+    | '/financas/creditos'
     | '/financas/dividas'
     | '/financas/fixas'
     | '/financas/variaveis'
@@ -218,6 +229,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/'
     | '/financas/categorias'
+    | '/financas/creditos'
     | '/financas/dividas'
     | '/financas/fixas'
     | '/financas/variaveis'
@@ -239,6 +251,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pt'
     | '/_authenticated/'
     | '/_authenticated/financas/categorias'
+    | '/_authenticated/financas/creditos'
     | '/_authenticated/financas/dividas'
     | '/_authenticated/financas/fixas'
     | '/_authenticated/financas/variaveis'
@@ -387,6 +400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinancasDividasRouteImport
       parentRoute: typeof AuthenticatedFinancasRoute
     }
+    '/_authenticated/financas/creditos': {
+      id: '/_authenticated/financas/creditos'
+      path: '/creditos'
+      fullPath: '/financas/creditos'
+      preLoaderRoute: typeof AuthenticatedFinancasCreditosRouteImport
+      parentRoute: typeof AuthenticatedFinancasRoute
+    }
     '/_authenticated/financas/categorias': {
       id: '/_authenticated/financas/categorias'
       path: '/categorias'
@@ -399,6 +419,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedFinancasRouteChildren {
   AuthenticatedFinancasCategoriasRoute: typeof AuthenticatedFinancasCategoriasRoute
+  AuthenticatedFinancasCreditosRoute: typeof AuthenticatedFinancasCreditosRoute
   AuthenticatedFinancasDividasRoute: typeof AuthenticatedFinancasDividasRoute
   AuthenticatedFinancasFixasRoute: typeof AuthenticatedFinancasFixasRoute
   AuthenticatedFinancasVariaveisRoute: typeof AuthenticatedFinancasVariaveisRoute
@@ -407,6 +428,7 @@ interface AuthenticatedFinancasRouteChildren {
 
 const AuthenticatedFinancasRouteChildren: AuthenticatedFinancasRouteChildren = {
   AuthenticatedFinancasCategoriasRoute: AuthenticatedFinancasCategoriasRoute,
+  AuthenticatedFinancasCreditosRoute: AuthenticatedFinancasCreditosRoute,
   AuthenticatedFinancasDividasRoute: AuthenticatedFinancasDividasRoute,
   AuthenticatedFinancasFixasRoute: AuthenticatedFinancasFixasRoute,
   AuthenticatedFinancasVariaveisRoute: AuthenticatedFinancasVariaveisRoute,
