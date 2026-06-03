@@ -25,11 +25,12 @@ export type MonthOverview = {
 };
 
 export async function getMonthOverview(ym: string): Promise<MonthOverview> {
-  const [categories, fixed, transactions, payments] = await Promise.all([
+  const [categories, fixed, transactions, payments, credits] = await Promise.all([
     listCategories(),
     listFixed(),
     listTransactionsByMonth(ym),
     listPaymentsByMonth(ym),
+    listCredits(),
   ]);
 
   const fixasAtivas = fixed.filter((f) => ativoNoMes(f, ym));
