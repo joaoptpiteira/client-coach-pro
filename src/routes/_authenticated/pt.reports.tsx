@@ -180,6 +180,26 @@ function ReportsPage() {
 
   return (
     <main className="px-5 pt-2 pb-8 space-y-4">
+      {/* Month selector */}
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-medium">
+          Relatórios
+        </p>
+        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+          <SelectTrigger className="w-[160px] h-8 text-xs bg-surface border-border">
+            <CalendarDays className="w-3.5 h-3.5 mr-1.5 text-primary" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {monthOptions.map((ym) => (
+              <SelectItem key={ym} value={ym} className="text-xs">
+                {ymLabelLong(ym)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Hero — Receita lifetime */}
       <Card className="relative overflow-hidden p-6 bg-surface border-border">
         <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
