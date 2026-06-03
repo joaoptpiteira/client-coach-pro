@@ -269,6 +269,7 @@ export type Database = {
         Row: {
           categoria_id: string | null
           created_at: string
+          credit_id: string | null
           data: string
           descricao: string | null
           fixed_expense_id: string | null
@@ -284,6 +285,7 @@ export type Database = {
         Insert: {
           categoria_id?: string | null
           created_at?: string
+          credit_id?: string | null
           data?: string
           descricao?: string | null
           fixed_expense_id?: string | null
@@ -299,6 +301,7 @@ export type Database = {
         Update: {
           categoria_id?: string | null
           created_at?: string
+          credit_id?: string | null
           data?: string
           descricao?: string | null
           fixed_expense_id?: string | null
@@ -317,6 +320,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "fin_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fin_transactions_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "fin_credits"
             referencedColumns: ["id"]
           },
           {

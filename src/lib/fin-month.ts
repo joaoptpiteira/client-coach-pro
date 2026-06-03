@@ -2,6 +2,7 @@ import { listCategories, type FinCategory } from "./fin-categories";
 import { listFixed, valorMensalEfetivo, ativoNoMes, type FinFixed } from "./fin-fixed";
 import { listTransactionsByMonth, type FinTransaction } from "./fin-transactions";
 import { listPaymentsByMonth, type PtPayment } from "./pt-payments";
+import { listCredits } from "./fin-credits";
 
 export type CategoryBreakdown = {
   id: string | null;
@@ -24,11 +25,12 @@ export type MonthOverview = {
 };
 
 export async function getMonthOverview(ym: string): Promise<MonthOverview> {
-  const [categories, fixed, transactions, payments] = await Promise.all([
+  const [categories, fixed, transactions, payments, credits] = await Promise.all([
     listCategories(),
     listFixed(),
     listTransactionsByMonth(ym),
     listPaymentsByMonth(ym),
+    listCredits(),
   ]);
 
   const fixasAtivas = fixed.filter((f) => ativoNoMes(f, ym));
@@ -60,7 +62,15 @@ export async function getMonthOverview(ym: string): Promise<MonthOverview> {
     .filter((f) => f.tipo_recorrencia === "anual_provisao")
     .reduce((s, f) => s + valorMensalEfetivo(f), 0);
 
-  const fixas = fixasVirtuaisTotal + fixasMaterializadasTotal;
+  // Créditos virtuais: prestação dos créditos ativos sem tx neste mês
+  const creditTxIds = new Set(
+    txDespesas.filter((t) => t.credit_id).map((t) => t.credit_id as string),
+  );
+  const creditosVirtuaisTotal = credits
+    .filter((c) => c.ativo && !creditTxIds.has(c.id))
+    .reduce((s, c) => s + Number(c.prestacao_mensal ?? 0), 0);
+
+  const fixas = fixasVirtuaisTotal + fixasMaterializadasTotal + creditosVirtuaisTotal;
   const despesasTotal = fixas + provisoes + variaveis;
 
   // Breakdown por categoria (despesas)

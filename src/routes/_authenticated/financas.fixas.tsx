@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, Power } from "lucide-react";
+import { Plus, Pencil, Trash2, Power, Landmark, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,10 @@ import { toast } from "sonner";
 import { fmtEUR } from "@/lib/fin-shared";
 import { listFixed, deleteFixed, updateFixed, valorMensalEfetivo, type FinFixed } from "@/lib/fin-fixed";
 import { listCategories } from "@/lib/fin-categories";
+import { listCredits, type FinCredit } from "@/lib/fin-credits";
+import { listTransactionsByMonth } from "@/lib/fin-transactions";
 import { FixedExpenseDialog } from "@/components/financas/FixedExpenseDialog";
+import { CreditPaymentDialog } from "@/components/financas/CreditPaymentDialog";
 
 export const Route = createFileRoute("/_authenticated/financas/fixas")({
   head: () => ({ meta: [{ title: "Finanças · Fixas" }] }),
@@ -21,9 +24,30 @@ function FixasPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<FinFixed | null>(null);
   const [showInactive, setShowInactive] = useState(false);
+  const [payCredit, setPayCredit] = useState<FinCredit | null>(null);
+
+  const ym = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }, []);
 
   const { data: fixed = [] } = useQuery({ queryKey: ["fin_fixed"], queryFn: listFixed });
   const { data: categories = [] } = useQuery({ queryKey: ["fin_categories"], queryFn: listCategories });
+  const { data: credits = [] } = useQuery({ queryKey: ["fin_credits"], queryFn: listCredits });
+  const { data: monthTx = [] } = useQuery({
+    queryKey: ["fin_tx", ym],
+    queryFn: () => listTransactionsByMonth(ym),
+  });
+
+  const creditTxByCredit = useMemo(() => {
+    const m = new Map<string, typeof monthTx[number]>();
+    for (const t of monthTx) {
+      if (t.credit_id) m.set(t.credit_id, t);
+    }
+    return m;
+  }, [monthTx]);
+
+  const activeCredits = credits.filter((c) => c.ativo);
 
   const visible = useMemo(
     () => fixed.filter((f) => (showInactive ? true : f.ativo)),
@@ -39,13 +63,20 @@ function FixasPage() {
     return m;
   }, [visible]);
 
-  const totalMensal = visible.filter((f) => f.ativo).reduce((s, f) => s + valorMensalEfetivo(f), 0);
+  const totalFixasMensal = visible.filter((f) => f.ativo).reduce((s, f) => s + valorMensalEfetivo(f), 0);
   const totalProvisoes = visible
     .filter((f) => f.ativo && f.tipo_recorrencia === "anual_provisao")
     .reduce((s, f) => s + valorMensalEfetivo(f), 0);
+  const totalCreditos = activeCredits.reduce((s, c) => {
+    const tx = creditTxByCredit.get(c.id);
+    return s + (tx ? Number(tx.valor) : Number(c.prestacao_mensal ?? 0));
+  }, 0);
+  const totalMensal = totalFixasMensal + totalCreditos;
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["fin_fixed"] });
+    qc.invalidateQueries({ queryKey: ["fin_credits"] });
+    qc.invalidateQueries({ queryKey: ["fin_tx", ym] });
     qc.invalidateQueries({ queryKey: ["fin_overview"] });
   };
 
@@ -80,7 +111,7 @@ function FixasPage() {
         </p>
         <p className="font-display text-4xl text-primary mt-1 privacy-blur">{fmtEUR(totalMensal)}</p>
         <p className="text-xs text-muted-foreground mt-2 privacy-blur">
-          Inclui {fmtEUR(totalProvisoes)} de provisões anuais
+          Fixas {fmtEUR(totalFixasMensal)} · Créditos {fmtEUR(totalCreditos)} · Provisões {fmtEUR(totalProvisoes)}
         </p>
       </Card>
 
@@ -156,11 +187,61 @@ function FixasPage() {
         })
       )}
 
+      {activeCredits.length > 0 && (
+        <div className="space-y-2 pt-2">
+          <div className="flex items-center gap-2 pl-1">
+            <Landmark className="w-3 h-3 text-[var(--color-warning)]" />
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Créditos — {ym}
+            </p>
+          </div>
+          {activeCredits.map((c) => {
+            const tx = creditTxByCredit.get(c.id) ?? null;
+            const valor = tx ? Number(tx.valor) : Number(c.prestacao_mensal ?? 0);
+            const pago = !!tx;
+            return (
+              <Card key={c.id} className="p-3 bg-surface border-border flex items-center gap-3">
+                <button
+                  onClick={() => setPayCredit(c)}
+                  className={`shrink-0 w-7 h-7 rounded-full border flex items-center justify-center transition-colors ${
+                    pago ? "bg-primary border-primary text-primary-foreground" : "border-border hover:border-primary"
+                  }`}
+                  title={pago ? "Editar pagamento" : "Registar pagamento"}
+                >
+                  {pago ? <Check className="w-3.5 h-3.5" /> : <Landmark className="w-3.5 h-3.5 text-muted-foreground" />}
+                </button>
+                <button onClick={() => setPayCredit(c)} className="flex-1 min-w-0 text-left">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium truncate">{c.nome}</p>
+                    {pago && <Badge variant="outline" className="text-[9px] py-0 h-4">pago</Badge>}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground privacy-blur">
+                    {c.dia_pagamento ? `Dia ${c.dia_pagamento} · ` : ""}
+                    Em dívida {fmtEUR(Number(c.valor_em_divida))}
+                  </p>
+                </button>
+                <span className={`font-mono text-sm shrink-0 privacy-blur ${pago ? "text-primary" : "text-muted-foreground"}`}>
+                  {fmtEUR(valor)}
+                </span>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
       <FixedExpenseDialog
         open={open}
         onOpenChange={setOpen}
         categories={categories}
         editing={editing}
+        onSaved={invalidate}
+      />
+      <CreditPaymentDialog
+        open={!!payCredit}
+        onOpenChange={(v) => { if (!v) setPayCredit(null); }}
+        credit={payCredit}
+        ym={ym}
+        existing={payCredit ? (creditTxByCredit.get(payCredit.id) ?? null) : null}
         onSaved={invalidate}
       />
     </main>
