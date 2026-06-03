@@ -165,6 +165,27 @@ function ImoConfig() {
         />
       </div>
 
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Mostrar últimos (dias)</Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={diasRecentes}
+            onChange={(e) => setDiasRecentes(e.target.value)}
+            placeholder="7"
+          />
+        </div>
+        <label className="flex items-end gap-2 pb-2 cursor-pointer">
+          <Checkbox
+            checked={esconderVistos}
+            onCheckedChange={(v) => setEsconderVistos(v === true)}
+          />
+          <span className="text-sm">Esconder já vistos</span>
+        </label>
+      </div>
+
       <Button onClick={handleSave} disabled={saving} className="w-full">
         <Save className="w-4 h-4" />
         {saving ? "A guardar..." : "Guardar"}
