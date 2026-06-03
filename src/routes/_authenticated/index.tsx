@@ -34,6 +34,14 @@ const APPS: AppItem[] = [
     icon: Wallet,
     available: true,
   },
+  {
+    id: "imobiliario",
+    name: "Imobiliário",
+    description: "Anúncios dos portais filtrados em tempo real.",
+    to: "/imobiliario",
+    icon: Home,
+    available: true,
+  },
 ];
 
 
