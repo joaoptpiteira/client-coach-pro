@@ -63,7 +63,14 @@ function ImoConfig() {
       toast.success("Configuração guardada");
       nav({ to: "/imobiliario" });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao guardar");
+      console.error("[saveConfig] erro", e);
+      const msg =
+        e instanceof Error
+          ? e.message
+          : typeof e === "object" && e !== null && "message" in e
+            ? String((e as { message: unknown }).message)
+            : JSON.stringify(e);
+      toast.error(`Erro ao guardar: ${msg}`);
     } finally {
       setSaving(false);
     }
