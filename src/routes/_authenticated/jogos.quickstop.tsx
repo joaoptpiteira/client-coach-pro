@@ -320,7 +320,7 @@ function QuickStopPage() {
 
         {!state.players.length && (
           <div className="text-center py-10 border border-dashed border-border rounded-2xl">
-            <p className="text-sm text-muted-foreground">Adiciona 2 a 7 jogadores para começar.</p>
+            <p className="text-sm text-muted-foreground">Adiciona pelo menos 2 jogadores para começar.</p>
           </div>
         )}
       </div>
