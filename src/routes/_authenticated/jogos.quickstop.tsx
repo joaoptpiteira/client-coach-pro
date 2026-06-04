@@ -83,7 +83,6 @@ function QuickStopPage() {
   function addPlayer() {
     const nome = novoNome.trim();
     if (!nome) return;
-    if (state.players.length >= 7) return;
     setState((s) => ({
       ...s,
       players: [
