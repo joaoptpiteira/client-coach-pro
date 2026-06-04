@@ -83,7 +83,6 @@ function QuickStopPage() {
   function addPlayer() {
     const nome = novoNome.trim();
     if (!nome) return;
-    if (state.players.length >= 7) return;
     setState((s) => ({
       ...s,
       players: [
@@ -229,15 +228,11 @@ function QuickStopPage() {
           value={novoNome}
           onChange={(e) => setNovoNome(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addPlayer()}
-          disabled={state.players.length >= 7}
         />
-        <Button onClick={addPlayer} disabled={state.players.length >= 7 || !novoNome.trim()}>
+        <Button onClick={addPlayer} disabled={!novoNome.trim()}>
           <UserPlus className="w-4 h-4" />
         </Button>
       </div>
-      {state.players.length >= 7 && (
-        <p className="text-[10px] text-muted-foreground mb-3">Máximo de 7 jogadores.</p>
-      )}
 
       {/* Players */}
       <div className="space-y-2">
@@ -325,7 +320,7 @@ function QuickStopPage() {
 
         {!state.players.length && (
           <div className="text-center py-10 border border-dashed border-border rounded-2xl">
-            <p className="text-sm text-muted-foreground">Adiciona 2 a 7 jogadores para começar.</p>
+            <p className="text-sm text-muted-foreground">Adiciona pelo menos 2 jogadores para começar.</p>
           </div>
         )}
       </div>
