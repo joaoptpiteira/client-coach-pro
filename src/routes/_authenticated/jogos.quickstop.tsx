@@ -228,15 +228,11 @@ function QuickStopPage() {
           value={novoNome}
           onChange={(e) => setNovoNome(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addPlayer()}
-          disabled={state.players.length >= 7}
         />
-        <Button onClick={addPlayer} disabled={state.players.length >= 7 || !novoNome.trim()}>
+        <Button onClick={addPlayer} disabled={!novoNome.trim()}>
           <UserPlus className="w-4 h-4" />
         </Button>
       </div>
-      {state.players.length >= 7 && (
-        <p className="text-[10px] text-muted-foreground mb-3">Máximo de 7 jogadores.</p>
-      )}
 
       {/* Players */}
       <div className="space-y-2">
