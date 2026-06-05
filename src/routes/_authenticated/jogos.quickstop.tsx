@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Minus, Plus, RotateCcw, Trash2, Trophy, Crown } from "lucide-react";
+import { ArrowLeft, Plus, RotateCcw, Trash2, Crown, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -25,15 +24,20 @@ type Player = {
   rondasGanhas: number;
 };
 
+type RoundHistory = {
+  points: Record<string, number>;
+  winnerId: string | null;
+};
+
 type State = {
   started: boolean;
   players: Player[];
   ronda: number;
   roundPoints: Record<string, string>;
-  roundWinnerId: string | null;
+  history: RoundHistory[];
 };
 
-const STORAGE_KEY = "quickstop_scoreboard_v2";
+const STORAGE_KEY = "quickstop_scoreboard_v3";
 
 function defaultState(): State {
   return {
@@ -41,7 +45,7 @@ function defaultState(): State {
     players: [],
     ronda: 1,
     roundPoints: {},
-    roundWinnerId: null,
+    history: [],
   };
 }
 
@@ -75,10 +79,11 @@ function QuickStopPage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state, hydrated]);
 
+  // Lower points = better (fewer cards)
   const ranking = useMemo(
     () =>
       [...state.players].sort(
-        (a, b) => b.pontos - a.pontos || b.rondasGanhas - a.rondasGanhas,
+        (a, b) => a.pontos - b.pontos || b.rondasGanhas - a.rondasGanhas,
       ),
     [state.players],
   );
@@ -109,7 +114,7 @@ function QuickStopPage() {
       players,
       ronda: 1,
       roundPoints: Object.fromEntries(players.map((p) => [p.id, ""])),
-      roundWinnerId: null,
+      history: [],
     });
   }
 
@@ -117,26 +122,60 @@ function QuickStopPage() {
     setState((s) => ({ ...s, roundPoints: { ...s.roundPoints, [id]: v } }));
   }
 
-  function setWinner(id: string) {
-    setState((s) => ({ ...s, roundWinnerId: s.roundWinnerId === id ? null : id }));
-  }
-
   function nextRound() {
     setState((s) => {
-      const players = s.players.map((p) => {
-        const pts = parseInt(s.roundPoints[p.id] || "0", 10) || 0;
-        return {
-          ...p,
-          pontos: p.pontos + pts,
-          rondasGanhas: p.rondasGanhas + (s.roundWinnerId === p.id ? 1 : 0),
-        };
-      });
+      const points: Record<string, number> = {};
+      for (const p of s.players) {
+        points[p.id] = parseInt(s.roundPoints[p.id] || "0", 10) || 0;
+      }
+      // Winner = player with lowest points this round (fewest cards)
+      let winnerId: string | null = null;
+      let min = Infinity;
+      let tie = false;
+      for (const p of s.players) {
+        const v = points[p.id];
+        if (v < min) {
+          min = v;
+          winnerId = p.id;
+          tie = false;
+        } else if (v === min) {
+          tie = true;
+        }
+      }
+      if (tie) winnerId = null;
+
+      const players = s.players.map((p) => ({
+        ...p,
+        pontos: p.pontos + points[p.id],
+        rondasGanhas: p.rondasGanhas + (winnerId === p.id ? 1 : 0),
+      }));
       return {
         ...s,
         players,
         ronda: s.ronda + 1,
         roundPoints: Object.fromEntries(players.map((p) => [p.id, ""])),
-        roundWinnerId: null,
+        history: [...s.history, { points, winnerId }],
+      };
+    });
+  }
+
+  function undoRound() {
+    setState((s) => {
+      if (s.history.length === 0) return s;
+      const last = s.history[s.history.length - 1];
+      const players = s.players.map((p) => ({
+        ...p,
+        pontos: p.pontos - (last.points[p.id] || 0),
+        rondasGanhas: p.rondasGanhas - (last.winnerId === p.id ? 1 : 0),
+      }));
+      return {
+        ...s,
+        players,
+        ronda: Math.max(1, s.ronda - 1),
+        roundPoints: Object.fromEntries(
+          players.map((p) => [p.id, String(last.points[p.id] ?? "")]),
+        ),
+        history: s.history.slice(0, -1),
       };
     });
   }
@@ -217,9 +256,19 @@ function QuickStopPage() {
                 {state.ronda}
               </p>
             </div>
-            <Button variant="ghost" size="sm" onClick={resetGame}>
-              <RotateCcw className="w-4 h-4" /> Reiniciar
-            </Button>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={undoRound}
+                disabled={state.history.length === 0}
+              >
+                <Undo2 className="w-4 h-4" /> Anterior
+              </Button>
+              <Button variant="ghost" size="sm" onClick={resetGame}>
+                <RotateCcw className="w-4 h-4" /> Reiniciar
+              </Button>
+            </div>
           </div>
 
           <div className="border border-border rounded-xl overflow-hidden bg-surface">
@@ -227,7 +276,7 @@ function QuickStopPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Jogador</TableHead>
-                  <TableHead className="text-right">Pontos</TableHead>
+                  <TableHead className="text-right">Cartas</TableHead>
                   <TableHead className="text-right">Rondas</TableHead>
                 </TableRow>
               </TableHeader>
@@ -254,40 +303,28 @@ function QuickStopPage() {
 
           <div>
             <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-2">
-              Pontos da ronda {state.ronda}
+              Cartas na mão · ronda {state.ronda}
+            </p>
+            <p className="text-xs text-muted-foreground mb-2">
+              Vence a ronda quem tiver menos cartas (atribuído automaticamente).
             </p>
             <div className="space-y-2">
-              {state.players.map((p) => {
-                const isWinner = state.roundWinnerId === p.id;
-                return (
-                  <div
-                    key={p.id}
-                    className={`border rounded-xl p-3 flex items-center gap-2 ${
-                      isWinner ? "border-primary/50 bg-primary/5" : "border-border bg-surface"
-                    }`}
-                  >
-                    <p className="flex-1 truncate font-medium">{p.nome}</p>
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      placeholder="0"
-                      value={state.roundPoints[p.id] ?? ""}
-                      onChange={(e) => updateRoundPoints(p.id, e.target.value)}
-                      className="w-20 h-9 text-right"
-                    />
-                    <Button
-                      type="button"
-                      variant={isWinner ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setWinner(p.id)}
-                      aria-label="Vencedor da ronda"
-                      className="shrink-0"
-                    >
-                      <Trophy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                );
-              })}
+              {state.players.map((p) => (
+                <div
+                  key={p.id}
+                  className="border border-border bg-surface rounded-xl p-3 flex items-center gap-2"
+                >
+                  <p className="flex-1 truncate font-medium">{p.nome}</p>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={state.roundPoints[p.id] ?? ""}
+                    onChange={(e) => updateRoundPoints(p.id, e.target.value)}
+                    className="w-20 h-9 text-right"
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
