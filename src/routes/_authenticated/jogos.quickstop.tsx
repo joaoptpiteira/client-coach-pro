@@ -1,9 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Minus, Plus, RotateCcw, Trash2, Trophy, UserPlus, Crown, Medal } from "lucide-react";
+import { ArrowLeft, Minus, Plus, RotateCcw, Trash2, Trophy, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/jogos/quickstop")({
   head: () => ({ meta: [{ title: "Quick Stop · Scoreboard" }] }),
@@ -13,20 +21,29 @@ export const Route = createFileRoute("/_authenticated/jogos/quickstop")({
 type Player = {
   id: string;
   nome: string;
-  cartas: number;
+  pontos: number;
   rondasGanhas: number;
-  partidasGanhas: number;
 };
 
 type State = {
+  started: boolean;
   players: Player[];
-  cartasIniciais: number;
   ronda: number;
-  partida: number;
-  historico: { partida: number; vencedor: string }[];
+  roundPoints: Record<string, string>;
+  roundWinnerId: string | null;
 };
 
-const STORAGE_KEY = "quickstop_scoreboard_v1";
+const STORAGE_KEY = "quickstop_scoreboard_v2";
+
+function defaultState(): State {
+  return {
+    started: false,
+    players: [],
+    ronda: 1,
+    roundPoints: {},
+    roundWinnerId: null,
+  };
+}
 
 function loadState(): State {
   if (typeof window === "undefined") return defaultState();
@@ -39,16 +56,6 @@ function loadState(): State {
   }
 }
 
-function defaultState(): State {
-  return {
-    players: [],
-    cartasIniciais: 5,
-    ronda: 1,
-    partida: 1,
-    historico: [],
-  };
-}
-
 function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
@@ -56,7 +63,7 @@ function uid() {
 function QuickStopPage() {
   const [state, setState] = useState<State>(defaultState);
   const [hydrated, setHydrated] = useState(false);
-  const [novoNome, setNovoNome] = useState("");
+  const [setupNames, setSetupNames] = useState<string[]>(["", ""]);
 
   useEffect(() => {
     setState(loadState());
@@ -68,100 +75,76 @@ function QuickStopPage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state, hydrated]);
 
-  const vencedorAtual = useMemo(() => {
-    const zerados = state.players.filter((p) => p.cartas <= 0);
-    if (!zerados.length) return null;
-    // primeiro a zero = primeiro da lista com cartas 0 (mantemos ordem em que ficaram a zero via partidasGanhas? simplificamos)
-    return zerados[0];
-  }, [state.players]);
-
   const ranking = useMemo(
-    () => [...state.players].sort((a, b) => a.cartas - b.cartas || b.rondasGanhas - a.rondasGanhas),
+    () =>
+      [...state.players].sort(
+        (a, b) => b.pontos - a.pontos || b.rondasGanhas - a.rondasGanhas,
+      ),
     [state.players],
   );
 
-  function addPlayer() {
-    const nome = novoNome.trim();
-    if (!nome) return;
-    setState((s) => ({
-      ...s,
-      players: [
-        ...s.players,
-        {
-          id: uid(),
-          nome,
-          cartas: s.cartasIniciais,
-          rondasGanhas: 0,
-          partidasGanhas: 0,
-        },
-      ],
+  function setName(idx: number, v: string) {
+    setSetupNames((arr) => arr.map((n, i) => (i === idx ? v : n)));
+  }
+
+  function addNameSlot() {
+    setSetupNames((arr) => [...arr, ""]);
+  }
+
+  function removeNameSlot(idx: number) {
+    setSetupNames((arr) => (arr.length <= 2 ? arr : arr.filter((_, i) => i !== idx)));
+  }
+
+  function startGame() {
+    const names = setupNames.map((n) => n.trim()).filter(Boolean);
+    if (names.length < 2) return;
+    const players: Player[] = names.map((nome) => ({
+      id: uid(),
+      nome,
+      pontos: 0,
+      rondasGanhas: 0,
     }));
-    setNovoNome("");
-  }
-
-  function removePlayer(id: string) {
-    setState((s) => ({ ...s, players: s.players.filter((p) => p.id !== id) }));
-  }
-
-  function setCartas(id: string, delta: number) {
-    setState((s) => ({
-      ...s,
-      players: s.players.map((p) =>
-        p.id === id ? { ...p, cartas: Math.max(0, p.cartas + delta) } : p,
-      ),
-    }));
-  }
-
-  function ganhouRonda(id: string) {
-    setState((s) => ({
-      ...s,
-      players: s.players.map((p) =>
-        p.id === id
-          ? { ...p, rondasGanhas: p.rondasGanhas + 1, cartas: Math.max(0, p.cartas - 1) }
-          : p,
-      ),
-    }));
-  }
-
-  function proximaRonda() {
-    setState((s) => ({ ...s, ronda: s.ronda + 1 }));
-  }
-
-  function terminarPartida() {
-    if (!vencedorAtual) return;
-    setState((s) => ({
-      ...s,
-      partida: s.partida + 1,
+    setState({
+      started: true,
+      players,
       ronda: 1,
-      historico: [...s.historico, { partida: s.partida, vencedor: vencedorAtual.nome }],
-      players: s.players.map((p) => ({
-        ...p,
-        cartas: s.cartasIniciais,
-        rondasGanhas: 0,
-        partidasGanhas: p.id === vencedorAtual.id ? p.partidasGanhas + 1 : p.partidasGanhas,
-      })),
-    }));
+      roundPoints: Object.fromEntries(players.map((p) => [p.id, ""])),
+      roundWinnerId: null,
+    });
   }
 
-  function resetTudo() {
-    if (!confirm("Reiniciar tudo (jogadores e histórico)?")) return;
+  function updateRoundPoints(id: string, v: string) {
+    setState((s) => ({ ...s, roundPoints: { ...s.roundPoints, [id]: v } }));
+  }
+
+  function setWinner(id: string) {
+    setState((s) => ({ ...s, roundWinnerId: s.roundWinnerId === id ? null : id }));
+  }
+
+  function nextRound() {
+    setState((s) => {
+      const players = s.players.map((p) => {
+        const pts = parseInt(s.roundPoints[p.id] || "0", 10) || 0;
+        return {
+          ...p,
+          pontos: p.pontos + pts,
+          rondasGanhas: p.rondasGanhas + (s.roundWinnerId === p.id ? 1 : 0),
+        };
+      });
+      return {
+        ...s,
+        players,
+        ronda: s.ronda + 1,
+        roundPoints: Object.fromEntries(players.map((p) => [p.id, ""])),
+        roundWinnerId: null,
+      };
+    });
+  }
+
+  function resetGame() {
+    if (!confirm("Reiniciar o jogo?")) return;
     setState(defaultState());
-  }
-
-  function resetCartas() {
-    setState((s) => ({
-      ...s,
-      ronda: 1,
-      players: s.players.map((p) => ({ ...p, cartas: s.cartasIniciais, rondasGanhas: 0 })),
-    }));
-  }
-
-  function setCartasIniciais(n: number) {
-    const v = Math.max(1, Math.min(15, n || 0));
-    setState((s) => ({
-      ...s,
-      cartasIniciais: v,
-    }));
+    setSetupNames(["", ""]);
   }
 
   return (
@@ -184,193 +167,135 @@ function QuickStopPage() {
         </div>
       </div>
 
-      {/* Partida + ronda */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="bg-surface border border-border rounded-xl p-3 text-center">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Partida</p>
-          <p className="font-display text-xl font-semibold mt-0.5">{state.partida}</p>
-        </div>
-        <div className="bg-surface border border-border rounded-xl p-3 text-center">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Ronda</p>
-          <p className="font-display text-xl font-semibold mt-0.5">{state.ronda}</p>
-        </div>
-        <div className="bg-surface border border-border rounded-xl p-3 text-center">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Cartas iniciais</p>
-          <Input
-            type="number"
-            min={1}
-            max={15}
-            value={state.cartasIniciais}
-            onChange={(e) => setCartasIniciais(parseInt(e.target.value, 10))}
-            className="h-7 text-center mt-1 text-base"
-          />
-        </div>
-      </div>
-
-      {/* Vencedor */}
-      {vencedorAtual && (
-        <div className="bg-primary/10 border border-primary/30 rounded-2xl p-4 mb-4 flex items-center gap-3">
-          <Crown className="w-6 h-6 text-primary" />
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-primary">Vencedor da partida</p>
-            <p className="font-display text-lg font-semibold truncate">{vencedorAtual.nome}</p>
-          </div>
-          <Button size="sm" onClick={terminarPartida}>
-            <Trophy className="w-4 h-4" /> Terminar
-          </Button>
-        </div>
-      )}
-
-      {/* Add player */}
-      <div className="flex gap-2 mb-3">
-        <Input
-          placeholder="Nome do jogador"
-          value={novoNome}
-          onChange={(e) => setNovoNome(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addPlayer()}
-        />
-        <Button onClick={addPlayer} disabled={!novoNome.trim()}>
-          <UserPlus className="w-4 h-4" />
-        </Button>
-      </div>
-
-      {/* Players */}
-      <div className="space-y-2">
-        {ranking.map((p, idx) => {
-          const isWinner = p.cartas === 0;
-          return (
-            <div
-              key={p.id}
-              className={`border rounded-2xl p-3 transition-colors ${
-                isWinner ? "border-primary/50 bg-primary/5" : "border-border bg-surface"
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-full bg-background border border-border flex items-center justify-center text-xs font-semibold">
-                  {idx + 1}
-                </div>
-                <p className="font-semibold flex-1 truncate">{p.nome}</p>
-                {p.partidasGanhas > 0 && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Trophy className="w-3 h-3" /> {p.partidasGanhas}
-                  </Badge>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                  onClick={() => removePlayer(p.id)}
-                  aria-label="Remover"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-background border border-border rounded-xl p-2">
-                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground text-center">
-                    Cartas
-                  </p>
-                  <div className="flex items-center justify-between mt-1">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => setCartas(p.id, -1)}
-                      disabled={p.cartas <= 0}
-                    >
-                      <Minus className="w-3.5 h-3.5" />
-                    </Button>
-                    <span className="font-display text-xl font-semibold tabular-nums">
-                      {p.cartas}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => setCartas(p.id, 1)}
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="bg-background border border-border rounded-xl p-2">
-                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground text-center">
-                    Rondas ganhas
-                  </p>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="font-display text-xl font-semibold tabular-nums ml-1">
-                      {p.rondasGanhas}
-                    </span>
-                    <Button
-                      size="sm"
-                      onClick={() => ganhouRonda(p.id)}
-                      disabled={p.cartas <= 0}
-                      className="h-7 px-2"
-                    >
-                      <Medal className="w-3.5 h-3.5" /> +1
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {!state.players.length && (
-          <div className="text-center py-10 border border-dashed border-border rounded-2xl">
-            <p className="text-sm text-muted-foreground">Adiciona pelo menos 2 jogadores para começar.</p>
-          </div>
-        )}
-      </div>
-
-      {/* Actions */}
-      {state.players.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 mt-4">
-          <Button variant="outline" onClick={proximaRonda}>
-            Próxima ronda
-          </Button>
-          <Button variant="outline" onClick={resetCartas}>
-            <RotateCcw className="w-4 h-4" /> Reset partida
-          </Button>
-        </div>
-      )}
-
-      {/* Histórico */}
-      {state.historico.length > 0 && (
-        <div className="mt-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
-            Histórico
-          </p>
-          <div className="space-y-1.5">
-            {state.historico
-              .slice()
-              .reverse()
-              .map((h) => (
-                <div
-                  key={h.partida}
-                  className="flex items-center justify-between text-sm bg-surface border border-border rounded-lg px-3 py-2"
-                >
-                  <span className="text-muted-foreground">Partida {h.partida}</span>
-                  <span className="font-medium flex items-center gap-1.5">
-                    <Trophy className="w-3.5 h-3.5 text-primary" />
-                    {h.vencedor}
-                  </span>
+      {!state.started ? (
+        <section className="space-y-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-2">
+              Jogadores
+            </p>
+            <div className="space-y-2">
+              {setupNames.map((n, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input
+                    placeholder={`Jogador ${i + 1}`}
+                    value={n}
+                    onChange={(e) => setName(i, e.target.value)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeNameSlot(i)}
+                    disabled={setupNames.length <= 2}
+                    aria-label="Remover"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               ))}
+            </div>
+            <Button variant="outline" className="w-full mt-2" onClick={addNameSlot}>
+              <Plus className="w-4 h-4" /> Adicionar jogador
+            </Button>
           </div>
-        </div>
-      )}
 
-      <div className="mt-8 text-center">
-        <button
-          onClick={resetTudo}
-          className="text-[11px] text-muted-foreground hover:text-destructive underline underline-offset-4"
-        >
-          Reiniciar tudo
-        </button>
-      </div>
+          <Button
+            className="w-full"
+            onClick={startGame}
+            disabled={setupNames.filter((n) => n.trim()).length < 2}
+          >
+            Começar jogo
+          </Button>
+        </section>
+      ) : (
+        <section className="space-y-5">
+          <div className="flex items-center justify-between bg-surface border border-border rounded-xl px-4 py-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Ronda atual
+              </p>
+              <p className="font-display text-2xl font-semibold leading-none mt-1">
+                {state.ronda}
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={resetGame}>
+              <RotateCcw className="w-4 h-4" /> Reiniciar
+            </Button>
+          </div>
+
+          <div className="border border-border rounded-xl overflow-hidden bg-surface">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Jogador</TableHead>
+                  <TableHead className="text-right">Pontos</TableHead>
+                  <TableHead className="text-right">Rondas</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ranking.map((p, idx) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">
+                      <span className="inline-flex items-center gap-2">
+                        {idx === 0 && <Crown className="w-3.5 h-3.5 text-primary" />}
+                        {p.nome}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums font-semibold">
+                      {p.pontos}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {p.rondasGanhas}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-2">
+              Pontos da ronda {state.ronda}
+            </p>
+            <div className="space-y-2">
+              {state.players.map((p) => {
+                const isWinner = state.roundWinnerId === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    className={`border rounded-xl p-3 flex items-center gap-2 ${
+                      isWinner ? "border-primary/50 bg-primary/5" : "border-border bg-surface"
+                    }`}
+                  >
+                    <p className="flex-1 truncate font-medium">{p.nome}</p>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={state.roundPoints[p.id] ?? ""}
+                      onChange={(e) => updateRoundPoints(p.id, e.target.value)}
+                      className="w-20 h-9 text-right"
+                    />
+                    <Button
+                      type="button"
+                      variant={isWinner ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setWinner(p.id)}
+                      aria-label="Vencedor da ronda"
+                      className="shrink-0"
+                    >
+                      <Trophy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <Button className="w-full" size="lg" onClick={nextRound}>
+            Próxima ronda
+          </Button>
+        </section>
+      )}
     </main>
   );
 }
