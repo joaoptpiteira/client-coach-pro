@@ -1,0 +1,1 @@
+DELETE FROM public.imoveis WHERE portal='casasapo'; UPDATE public.config_imoveis SET portais = array_remove(portais, 'casasapo');
