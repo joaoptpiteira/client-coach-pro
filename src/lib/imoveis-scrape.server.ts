@@ -323,6 +323,7 @@ const SCRAPERS: Record<string, (cfg: Config) => Promise<ScraperResult>> = {
   imovirtual: scrapeImovirtual,
   idealista: scrapeIdealista,
   olx: scrapeOlx,
+  casasapo: scrapeCasaSapo,
 };
 
 // SupabaseLike: minimal interface so this works with both auth client and admin client.

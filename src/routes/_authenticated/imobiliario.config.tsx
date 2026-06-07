@@ -20,7 +20,7 @@ function ImoConfig() {
   const nav = useNavigate();
   const cfgQ = useQuery({ queryKey: ["imo", "config"], queryFn: getConfig });
 
-  const [portais, setPortais] = useState<string[]>(["imovirtual", "idealista", "olx"]);
+  const [portais, setPortais] = useState<string[]>(["imovirtual", "idealista", "olx", "casasapo"]);
   const [tipo, setTipo] = useState<Tipo>("ambos");
   const [precoMin, setPrecoMin] = useState("");
   const [precoMax, setPrecoMax] = useState("");
