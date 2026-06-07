@@ -9,7 +9,6 @@ export const PORTAIS = [
   { id: "imovirtual", label: "Imovirtual" },
   { id: "idealista", label: "Idealista" },
   { id: "olx", label: "OLX" },
-  { id: "casasapo", label: "Casa Sapo" },
 ] as const;
 
 export type PortalId = (typeof PORTAIS)[number]["id"];
