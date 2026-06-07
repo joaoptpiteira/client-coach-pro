@@ -264,46 +264,60 @@ async function scrapeOlx(cfg: Config): Promise<ScraperResult> {
 // --- CASA SAPO ---
 async function scrapeCasaSapo(cfg: Config): Promise<ScraperResult> {
   const out: ScrapedListing[] = [];
-  const zona = zonaSlug(cfg.zona);
+  const zonas = zonaTerms(cfg.zona);
   let lastError: number | string | undefined;
   for (const tipo of tipoSlugFromConfig(cfg.tipo, "casasapo")) {
-    const params = new URLSearchParams();
-    params.set("tr", "1");
-    if (cfg.preco_min) params.set("pmin", String(cfg.preco_min));
-    if (cfg.preco_max) params.set("pmax", String(cfg.preco_max));
-    if (cfg.quartos_min) params.set("tpmin", String(cfg.quartos_min));
-    if (zona) params.set("lo", zona);
-    params.set("tp", tipo === "apartamento" ? "1" : "2");
-    const url = `https://casa.sapo.pt/Venda/Imoveis/?${params.toString()}`;
-    const r = await fetchHtml(url, "https://casa.sapo.pt/");
-    if (!r.ok) {
-      lastError = r.status;
-      continue;
-    }
-    const html = r.html;
-    const propRe = /<div[^>]*class="[^"]*property[^"]*"[\s\S]*?<\/div>\s*<\/div>/g;
-    const matches = html.match(propRe) ?? [];
-    for (const block of matches.slice(0, 30)) {
-      const hrefM = block.match(/href="(https?:\/\/[^"]*casa\.sapo\.pt\/[^"]+)"/);
-      if (!hrefM) continue;
-      const titleM = block.match(/<h2[^>]*>([\s\S]*?)<\/h2>/) || block.match(/title="([^"]+)"/);
-      const priceM = block.match(/([\d\s.]+)\s*€/);
-      const areaM = block.match(/(\d+[\d.,]*)\s*m[²2]/i);
-      const roomsM = block.match(/T(\d)/);
-      out.push({
-        titulo: titleM ? titleM[1].replace(/<[^>]+>/g, "").trim() : "Casa Sapo",
-        preco: parseNumber(priceM?.[1]),
-        localizacao: cfg.zona,
-        area: areaM ? parseNumber(areaM[1]) : null,
-        quartos: roomsM ? parseInt(roomsM[1], 10) : null,
-        tipo,
-        portal: "casasapo",
-        url: hrefM[1],
-      });
+    for (const zona of zonas) {
+      // Novo formato: /comprar-apartamentos/{zona}/  ou  /comprar-moradias/{zona}/
+      const tipoPath = tipo === "apartamento" ? "comprar-apartamentos" : "comprar-moradias";
+      const zonaPath = zona || "portugal";
+      const url = `https://casa.sapo.pt/${tipoPath}/${zonaPath}/`;
+      const r = await fetchHtml(url, "https://www.google.com/");
+      if (!r.ok) {
+        if (r.status !== 404) lastError = r.status;
+        continue;
+      }
+      const html = r.html;
+      const propRe = /<div[^>]*class="[^"]*\bproperty\b[^"]*"[\s\S]{0,5000}?(?=<div[^>]*class="[^"]*\bproperty\b|<\/main>|<\/body>)/g;
+      const matches = html.match(propRe) ?? [];
+      for (const block of matches.slice(0, 30)) {
+        // O href está wrapped num counter: ...counter.aspx?...&l=<URL real>
+        const hrefM =
+          block.match(/href="[^"]*[?&]l=([^"&#]+(?:\.html|\/)[^"&#]*)/) ||
+          block.match(/href="(https?:\/\/casa\.sapo\.pt\/[^"#?]+\.html[^"]*)"/);
+        if (!hrefM) continue;
+        let listingUrl = decodeURIComponent(hrefM[1]).replace(/&amp;/g, "&");
+        // Limpa fragmento e parâmetros de tracking
+        listingUrl = listingUrl.split("#")[0].split("?")[0];
+        if (!/^https?:\/\//.test(listingUrl)) listingUrl = `https://casa.sapo.pt${listingUrl.startsWith("/") ? "" : "/"}${listingUrl}`;
+
+        const titleM =
+          block.match(/<h2[^>]*>([\s\S]*?)<\/h2>/) ||
+          block.match(/class="[^"]*property-type[^"]*"[^>]*>([\s\S]*?)</) ||
+          block.match(/title="([^"]+)"/);
+        const priceM =
+          block.match(/class="[^"]*property-price[^"]*"[^>]*>([\s\S]*?)€/) ||
+          block.match(/([\d\s.]+)\s*€/);
+        const locM = block.match(/class="[^"]*property-location[^"]*"[^>]*>([\s\S]*?)</);
+        const areaM = block.match(/(\d+[\d.,]*)\s*m[²2]/i);
+        const titulo = cleanText(titleM?.[1]) || "Casa Sapo";
+        const roomsM = titulo.match(/T(\d)/i) || block.match(/T(\d)/);
+        out.push({
+          titulo,
+          preco: parseNumber(priceM?.[1]),
+          localizacao: cleanText(locM?.[1]) || cfg.zona,
+          area: areaM ? parseNumber(areaM[1]) : null,
+          quartos: roomsM ? parseInt(roomsM[1], 10) : null,
+          tipo,
+          portal: "casasapo",
+          url: listingUrl,
+        });
+      }
     }
   }
   return out.length === 0 && lastError !== undefined ? { listings: out, error: lastError } : { listings: out };
 }
+
 
 const SCRAPERS: Record<string, (cfg: Config) => Promise<ScraperResult>> = {
   imovirtual: scrapeImovirtual,
