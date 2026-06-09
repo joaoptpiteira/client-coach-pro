@@ -368,6 +368,18 @@ function DashboardPage() {
           </ul>
         </Card>
       )}
+
+      {drill && (
+        <CategoryDrillDownDialog
+          open={!!drill}
+          onOpenChange={(v) => !v && setDrill(null)}
+          categoryName={drill.nome}
+          categoryColor={drill.cor}
+          total={drill.total}
+          transactions={drillTxs}
+          fixas={drillFixas}
+        />
+      )}
     </main>
   );
 }
