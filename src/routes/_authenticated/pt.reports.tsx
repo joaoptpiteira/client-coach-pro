@@ -9,7 +9,7 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
 import {
-  Users, TrendingUp, Dumbbell, CreditCard, UserPlus, UserMinus, Gift, Trophy, Activity, Wallet, CalendarDays,
+  Users, TrendingUp, Dumbbell, CreditCard, UserPlus, UserMinus, Gift, Trophy, Activity, Wallet, CalendarDays, Filter, LogOut, Repeat,
 } from "lucide-react";
 import { listClients, fmtEUR, valorAPagar, type PtClient } from "@/lib/pt-clients";
 import { listAllPayments } from "@/lib/pt-payments";
