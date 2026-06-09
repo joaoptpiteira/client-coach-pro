@@ -97,6 +97,12 @@ function CreditosPage() {
           const pagoPct = c.valor_total > 0
             ? Math.min(100, Math.max(0, ((Number(c.valor_total) - Number(c.valor_em_divida)) / Number(c.valor_total)) * 100))
             : 0;
+          const divida = Number(c.valor_em_divida);
+          const prest = Number(c.prestacao_mensal ?? 0);
+          const mesesRestantes = prest > 0 && divida > 0 ? Math.ceil(divida / prest) : null;
+          const fimEstimado = mesesRestantes !== null
+            ? new Date(new Date().getFullYear(), new Date().getMonth() + mesesRestantes, 1)
+            : null;
           return (
             <Card key={c.id} className={`p-3.5 bg-surface border-border ${!c.ativo ? "opacity-60" : ""}`}>
               <div className="flex items-start justify-between gap-2">
@@ -129,6 +135,17 @@ function CreditosPage() {
                   <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pagoPct}%` }} />
                 </div>
               </div>
+
+              {c.ativo && mesesRestantes !== null && fimEstimado && (
+                <div className="mt-2.5 flex items-center justify-between text-[10px] text-muted-foreground pt-2 border-t border-border/40">
+                  <span>
+                    {mesesRestantes} {mesesRestantes === 1 ? "mês" : "meses"} restantes
+                  </span>
+                  <span className="font-mono text-foreground">
+                    Fim: {fimEstimado.toLocaleDateString("pt-PT", { month: "short", year: "numeric" })}
+                  </span>
+                </div>
+              )}
 
               <div className="flex items-center gap-1 mt-2 -mr-1 justify-end">
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground"
