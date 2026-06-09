@@ -41,6 +41,7 @@ interface FormState {
   forecast_notas: string;
   treinos_pagos: string;
   treinos_dados: string;
+  motivo_saida: string;
 }
 
 const empty = (status: ClientStatus = "ativo"): FormState => ({
@@ -61,6 +62,7 @@ const empty = (status: ClientStatus = "ativo"): FormState => ({
   forecast_notas: "",
   treinos_pagos: "0",
   treinos_dados: "0",
+  motivo_saida: "",
 });
 
 const num = (s: string) => (s.trim() === "" ? 0 : Number(s.replace(",", ".")));
