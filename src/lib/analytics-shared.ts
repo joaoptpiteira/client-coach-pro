@@ -42,3 +42,19 @@ export function fmtDelta(pct: number | null): string {
   const sign = pct >= 0 ? "+" : "";
   return `${sign}${pct.toFixed(0)}%`;
 }
+
+/**
+ * Runway em meses: quanto tempo um saldo acumulado cobre a despesa média mensal.
+ * Retorna null se despesa média for ≤ 0.
+ */
+export function monthsRunway(acumulado: number, despesaMediaMensal: number): number | null {
+  if (despesaMediaMensal <= 0) return null;
+  if (acumulado <= 0) return 0;
+  return acumulado / despesaMediaMensal;
+}
+
+/** Média simples ignorando 0 entries opcional. */
+export function avg(nums: number[]): number {
+  if (!nums.length) return 0;
+  return nums.reduce((s, n) => s + n, 0) / nums.length;
+}
