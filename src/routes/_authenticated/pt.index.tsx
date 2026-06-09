@@ -73,6 +73,22 @@ function DashboardPage() {
   const hoje = now.getDate();
   const diasAtraso = Math.max(0, hoje - 5);
 
+  // Treinos programados para o mês atual (com base no que está pago)
+  const diasNoMes = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const semanasMes = diasNoMes / 7;
+  const treinosMensal = ativos
+    .filter((c) => c.service_type === "mensalidade")
+    .reduce((s, c) => s + Math.round(Number(c.frequencia_semanal ?? 0) * semanasMes), 0);
+  const treinosPacks = ativos
+    .filter((c) => c.service_type === "pack")
+    .reduce((s, c) => {
+      const saldo = Math.max(0, Number(c.treinos_pagos ?? 0) - Number(c.treinos_dados ?? 0));
+      const teto = Math.round(Number(c.frequencia_semanal ?? 0) * semanasMes);
+      return s + (teto > 0 ? Math.min(saldo, teto) : saldo);
+    }, 0);
+  const treinosProgramados = treinosMensal + treinosPacks;
+  const treinosDadosMes = trainings.length;
+
   // Clientes sem treino há ≥14 dias
   const semTreino = ativos
     .map((c) => {
