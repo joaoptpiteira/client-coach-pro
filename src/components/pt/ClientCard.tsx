@@ -1,7 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Phone, TrendingDown, Gift } from "lucide-react";
+import { Phone, TrendingDown, Gift, Dumbbell } from "lucide-react";
 import { type PtClient, SERVICE_LABEL, FREQUENCY_LABEL, fmtEUR } from "@/lib/pt-clients";
+import { daysSince } from "@/lib/analytics-shared";
 
 interface Props {
   client: PtClient;
@@ -11,10 +12,13 @@ interface Props {
 export function ClientCard({ client: c, onClick }: Props) {
   const vaiParar = c.status === "ativo" && c.forecast === "parar";
   const temDesconto = Number(c.desconto_afiliado ?? 0) > 0;
+  const ultimo = (c as unknown as { ultimo_treino_em: string | null }).ultimo_treino_em;
+  const diasSemTreino = c.status === "ativo" ? daysSince(ultimo) : null;
+  const alertSemTreino = diasSemTreino !== null && diasSemTreino >= 14;
 
   return (
     <button onClick={onClick} className="text-left w-full">
-      <Card className={`p-4 bg-surface hover:bg-surface-elevated transition-all active:scale-[0.99] ${vaiParar ? "border-destructive/40" : "border-border"}`}>
+      <Card className={`p-4 bg-surface hover:bg-surface-elevated transition-all active:scale-[0.99] ${vaiParar ? "border-destructive/40" : alertSemTreino ? "border-[var(--color-warning,#c9893a)]/40" : "border-border"}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -22,6 +26,11 @@ export function ClientCard({ client: c, onClick }: Props) {
               {vaiParar && (
                 <Badge variant="destructive" className="text-[10px] gap-1 px-1.5 py-0">
                   <TrendingDown className="w-2.5 h-2.5" /> Vai parar
+                </Badge>
+              )}
+              {alertSemTreino && !vaiParar && (
+                <Badge className="text-[10px] gap-1 px-1.5 py-0 bg-[var(--color-warning,#c9893a)]/20 text-[var(--color-warning,#c9893a)] border-0">
+                  <Dumbbell className="w-2.5 h-2.5" /> {diasSemTreino}d sem treino
                 </Badge>
               )}
             </div>
