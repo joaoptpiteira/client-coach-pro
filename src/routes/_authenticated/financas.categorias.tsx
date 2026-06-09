@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  listCategories, createCategory, deleteCategory, type FinCategory,
+  listCategories, createCategory, deleteCategory, updateCategory, type FinCategory,
 } from "@/lib/fin-categories";
+import { fmtEUR } from "@/lib/fin-shared";
 
 export const Route = createFileRoute("/_authenticated/financas/categorias")({
   head: () => ({ meta: [{ title: "Finanças · Categorias" }] }),
@@ -31,6 +32,8 @@ function CategoriasPage() {
   const [nome, setNome] = useState("");
   const [cor, setCor] = useState(PRESET_COLORS[0]);
   const [saving, setSaving] = useState(false);
+  const [budgetEditing, setBudgetEditing] = useState<FinCategory | null>(null);
+  const [budgetVal, setBudgetVal] = useState("");
 
   const { data: cats = [] } = useQuery({ queryKey: ["fin_categories"], queryFn: listCategories });
 
@@ -67,23 +70,66 @@ function CategoriasPage() {
     }
   };
 
-  const renderGroup = (title: string, list: FinCategory[]) => (
+  const openBudget = (c: FinCategory) => {
+    setBudgetEditing(c);
+    const b = Number((c as unknown as { orcamento_mensal: number | null }).orcamento_mensal ?? 0);
+    setBudgetVal(b > 0 ? String(b) : "");
+  };
+
+  const saveBudget = async () => {
+    if (!budgetEditing) return;
+    const raw = budgetVal.replace(",", ".");
+    const n = raw === "" ? null : Number(raw);
+    if (n !== null && (!Number.isFinite(n) || n < 0)) {
+      toast.error("Valor inválido"); return;
+    }
+    try {
+      await updateCategory(budgetEditing.id, { orcamento_mensal: n } as never);
+      toast.success(n === null ? "Orçamento removido" : "Orçamento atualizado");
+      setBudgetEditing(null);
+      invalidate();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  };
+
+  const renderGroup = (title: string, list: FinCategory[], allowBudget: boolean) => (
     <div className="space-y-2">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold pl-1">{title}</p>
-      {list.map((c) => (
-        <Card key={c.id} className="p-3 bg-surface border-border flex items-center gap-3">
-          <div className="w-3 h-3 rounded-full" style={{ background: c.cor }} />
-          <p className="flex-1 text-sm">{c.nome}</p>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-            onClick={() => handleDelete(c)}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
-        </Card>
-      ))}
+      {list.map((c) => {
+        const budget = Number((c as unknown as { orcamento_mensal: number | null }).orcamento_mensal ?? 0);
+        return (
+          <Card key={c.id} className="p-3 bg-surface border-border flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full shrink-0" style={{ background: c.cor }} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm">{c.nome}</p>
+              {allowBudget && budget > 0 && (
+                <p className="text-[10px] text-muted-foreground font-mono privacy-blur">
+                  Orçamento: {fmtEUR(budget)}/mês
+                </p>
+              )}
+            </div>
+            {allowBudget && (
+              <Button
+                variant="ghost" size="icon"
+                className={`h-7 w-7 ${budget > 0 ? "text-primary" : "text-muted-foreground"}`}
+                onClick={() => openBudget(c)}
+                aria-label="Editar orçamento"
+              >
+                <Target className="w-3.5 h-3.5" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+              onClick={() => handleDelete(c)}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </Card>
+        );
+      })}
     </div>
   );
 
@@ -95,8 +141,8 @@ function CategoriasPage() {
         </Button>
       </div>
 
-      {renderGroup("Despesas", despesas)}
-      {renderGroup("Receitas", receitas)}
+      {renderGroup("Despesas", despesas, true)}
+      {renderGroup("Receitas", receitas, false)}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm">
@@ -150,6 +196,40 @@ function CategoriasPage() {
             <Button onClick={handleSave} disabled={saving}>
               {saving ? "A guardar…" : "Guardar"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!budgetEditing} onOpenChange={(v) => { if (!v) setBudgetEditing(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-primary" />
+              Orçamento — {budgetEditing?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              Define um teto mensal para esta categoria. Quando estiveres acima de 80% vais ver alerta no dashboard.
+            </p>
+            <div>
+              <Label htmlFor="budget" className="text-xs">Valor mensal (€)</Label>
+              <Input
+                id="budget"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                autoFocus
+                placeholder="Deixa vazio para remover"
+                value={budgetVal}
+                onChange={(e) => setBudgetVal(e.target.value)}
+                className="text-lg h-12 font-display"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setBudgetEditing(null)}>Cancelar</Button>
+            <Button onClick={saveBudget}>Guardar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

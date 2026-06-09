@@ -72,6 +72,7 @@ export type Database = {
           icone: string
           id: string
           nome: string
+          orcamento_mensal: number | null
           ordem: number
           owner_id: string
           tipo: Database["public"]["Enums"]["fin_tipo"]
@@ -83,6 +84,7 @@ export type Database = {
           icone?: string
           id?: string
           nome: string
+          orcamento_mensal?: number | null
           ordem?: number
           owner_id: string
           tipo: Database["public"]["Enums"]["fin_tipo"]
@@ -94,6 +96,7 @@ export type Database = {
           icone?: string
           id?: string
           nome?: string
+          orcamento_mensal?: number | null
           ordem?: number
           owner_id?: string
           tipo?: Database["public"]["Enums"]["fin_tipo"]
@@ -404,6 +407,7 @@ export type Database = {
           id: string
           indicado_por: string | null
           mes_inicio: string | null
+          motivo_saida: string | null
           nome: string
           notas: string | null
           numero: number
@@ -413,6 +417,7 @@ export type Database = {
           telefone: string | null
           treinos_dados: number
           treinos_pagos: number
+          ultimo_treino_em: string | null
           updated_at: string
           valor_acompanhamento_online: number
           valor_acordado: number
@@ -432,6 +437,7 @@ export type Database = {
           id?: string
           indicado_por?: string | null
           mes_inicio?: string | null
+          motivo_saida?: string | null
           nome: string
           notas?: string | null
           numero: number
@@ -441,6 +447,7 @@ export type Database = {
           telefone?: string | null
           treinos_dados?: number
           treinos_pagos?: number
+          ultimo_treino_em?: string | null
           updated_at?: string
           valor_acompanhamento_online?: number
           valor_acordado?: number
@@ -460,6 +467,7 @@ export type Database = {
           id?: string
           indicado_por?: string | null
           mes_inicio?: string | null
+          motivo_saida?: string | null
           nome?: string
           notas?: string | null
           numero?: number
@@ -469,6 +477,7 @@ export type Database = {
           telefone?: string | null
           treinos_dados?: number
           treinos_pagos?: number
+          ultimo_treino_em?: string | null
           updated_at?: string
           valor_acompanhamento_online?: number
           valor_acordado?: number

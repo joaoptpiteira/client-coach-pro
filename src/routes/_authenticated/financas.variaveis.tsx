@@ -1,17 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { mesRef, mesRefLabel, shiftMes, fmtEUR } from "@/lib/fin-shared";
+import { mesRef, mesRefLabel, fmtEUR } from "@/lib/fin-shared";
 import {
   listTransactionsByMonth,
   deleteTransaction,
 } from "@/lib/fin-transactions";
 import { listCategories } from "@/lib/fin-categories";
 import { TransactionDialog } from "@/components/financas/TransactionDialog";
+import { MonthNavigator } from "@/components/MonthNavigator";
 
 export const Route = createFileRoute("/_authenticated/financas/variaveis")({
   head: () => ({ meta: [{ title: "Finanças · Variáveis" }] }),
@@ -61,15 +62,7 @@ function VariaveisPage() {
 
   return (
     <main className="px-5 pt-2 pb-6 space-y-4">
-      <div className="flex items-center justify-between bg-surface border border-border rounded-xl px-2 py-1.5">
-        <Button variant="ghost" size="icon" onClick={() => setMes((m) => shiftMes(m, -1))}>
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-        <p className="font-display text-base capitalize">{mesRefLabel(mes)}</p>
-        <Button variant="ghost" size="icon" onClick={() => setMes((m) => shiftMes(m, 1))}>
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
+      <MonthNavigator value={mes} onChange={setMes} label={mesRefLabel(mes)} />
 
       <div className="grid grid-cols-2 gap-3">
         <Card className="p-3 bg-surface border-border">

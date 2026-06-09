@@ -1,17 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, AlertCircle, MessageCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { listClients, fmtEUR, valorAPagar } from "@/lib/pt-clients";
 import {
-  listPaymentsByMonth, deletePayment, mesRef, mesRefLabel, shiftMes,
+  listPaymentsByMonth, deletePayment, mesRef, mesRefLabel,
 } from "@/lib/pt-payments";
 import { PaymentDialog } from "@/components/pt/PaymentDialog";
 import { AddTrainingsDialog } from "@/components/pt/AddTrainingsDialog";
+import { MonthNavigator } from "@/components/MonthNavigator";
+import { whatsappLink } from "@/lib/analytics-shared";
 import type { PtClient } from "@/lib/pt-clients";
 
 export const Route = createFileRoute("/_authenticated/pt/payments")({
@@ -45,6 +47,18 @@ function PaymentsPage() {
   const emFalta = ativos.filter((c) => !byClient[c.id]);
   const totalFalta = emFalta.reduce((s, c) => s + valorAPagar(c), 0);
 
+  // Dias em atraso só faz sentido no mês corrente
+  const isCurrentMonth = mes === mesRef(new Date());
+  const today = new Date();
+  const diasAtraso = isCurrentMonth ? Math.max(0, today.getDate() - 5) : 0;
+
+  // Agrupar pagamentos por data
+  const groupedPayments = useMemo(() => {
+    const m: Record<string, typeof payments> = {};
+    for (const p of payments) (m[p.data] ??= []).push(p);
+    return Object.entries(m).sort((a, b) => (a[0] < b[0] ? 1 : -1));
+  }, [payments]);
+
   const handleDelete = async (id: string) => {
     if (!confirm("Eliminar este pagamento?")) return;
     try {
@@ -63,16 +77,7 @@ function PaymentsPage() {
 
   return (
     <main className="px-5 pt-2 pb-6 space-y-4">
-      {/* Month navigator */}
-      <div className="flex items-center justify-between bg-surface border border-border rounded-xl px-2 py-1.5">
-        <Button variant="ghost" size="icon" onClick={() => setMes((m) => shiftMes(m, -1))}>
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-        <p className="font-display text-base capitalize">{mesRefLabel(mes)}</p>
-        <Button variant="ghost" size="icon" onClick={() => setMes((m) => shiftMes(m, 1))}>
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
+      <MonthNavigator value={mes} onChange={setMes} label={mesRefLabel(mes)} />
 
       {/* Totals */}
       <Card className="p-5 bg-gradient-to-br from-accent to-surface border-accent/50">
@@ -87,25 +92,48 @@ function PaymentsPage() {
 
       {emFalta.length > 0 && (
         <Card className="p-4 bg-surface border-border">
-          <p className="text-sm font-semibold flex items-center gap-2 mb-3">
+          <p className="text-sm font-semibold flex items-center gap-2 mb-3 flex-wrap">
             <AlertCircle className="w-4 h-4 text-destructive" />
             Falta receber · <span className="privacy-blur">{fmtEUR(totalFalta)}</span>
+            {diasAtraso > 0 && (
+              <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0">
+                <Clock className="w-2.5 h-2.5" /> {diasAtraso}d atraso
+              </Badge>
+            )}
           </p>
-          <ul className="space-y-1.5">
-            {emFalta.map((c) => (
-              <li key={c.id}>
-                <button onClick={() => openNew(c.id)}
-                  className="w-full flex justify-between items-center text-sm py-1.5 px-2 -mx-2 rounded-lg hover:bg-muted/60 transition-colors">
-                  <span>{c.nome}</span>
-                  <span className="font-mono text-xs text-primary">{fmtEUR(valorAPagar(c))} →</span>
-                </button>
-              </li>
-            ))}
+          <ul className="space-y-1">
+            {emFalta.map((c) => {
+              const valor = valorAPagar(c);
+              const wa = whatsappLink(
+                c.telefone,
+                `Olá ${c.nome}! Lembrete amigável do PT — mensalidade ${mesRefLabel(mes)} (${fmtEUR(valor)}). Obrigado! 💪`,
+              );
+              return (
+                <li key={c.id} className="flex items-center gap-2 py-1.5 px-2 -mx-2 rounded-lg hover:bg-muted/60 transition-colors">
+                  <button onClick={() => openNew(c.id)} className="flex-1 min-w-0 text-left text-sm flex justify-between items-center gap-2">
+                    <span className="truncate">{c.nome}</span>
+                    <span className="font-mono text-xs text-primary privacy-blur shrink-0">{fmtEUR(valor)} →</span>
+                  </button>
+                  {wa && (
+                    <a
+                      href={wa}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#25D366]/15 text-[#25D366] hover:bg-[#25D366]/25 transition-colors shrink-0"
+                      aria-label="Lembrar via WhatsApp"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </Card>
       )}
 
-      {/* Payments list */}
+      {/* Payments list — agrupado por data */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
@@ -125,26 +153,32 @@ function PaymentsPage() {
             <p className="text-sm text-muted-foreground">Sem pagamentos este mês.</p>
           </Card>
         ) : (
-          payments.map((p) => {
-            const c = clients.find((c) => c.id === p.client_id);
-            return (
-              <Card key={p.id} className="p-3.5 bg-surface border-border flex items-center gap-3">
-                <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{c?.nome ?? "Cliente eliminado"}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {new Date(p.data).toLocaleDateString("pt-PT")}
-                    {p.notas && ` · ${p.notas}`}
-                  </p>
-                </div>
-                <Badge variant="outline" className="font-mono text-xs">{fmtEUR(Number(p.valor_pt ?? p.valor_pago))}</Badge>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  onClick={() => handleDelete(p.id)}>
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </Card>
-            );
-          })
+          groupedPayments.map(([date, list]) => (
+            <div key={date} className="space-y-2">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold pl-1 pt-2">
+                {new Date(date).toLocaleDateString("pt-PT", { weekday: "long", day: "numeric", month: "long" })}
+              </p>
+              {list.map((p) => {
+                const c = clients.find((c) => c.id === p.client_id);
+                return (
+                  <Card key={p.id} className="p-3.5 bg-surface border-border flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{c?.nome ?? "Cliente eliminado"}</p>
+                      {p.notas && (
+                        <p className="text-[11px] text-muted-foreground truncate">{p.notas}</p>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="font-mono text-xs privacy-blur">{fmtEUR(Number(p.valor_pt ?? p.valor_pago))}</Badge>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDelete(p.id)}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </Card>
+                );
+              })}
+            </div>
+          ))
         )}
       </div>
 
