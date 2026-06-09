@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
-  TrendingUp, TrendingDown, Users, CreditCard, Package, Gift, AlertTriangle, Dumbbell, CheckCircle2, Pencil,
+  TrendingUp, TrendingDown, Users, CreditCard, Package, Gift, AlertTriangle, Dumbbell, CheckCircle2, Pencil, MessageCircle, Clock,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { ForecastDialog } from "@/components/pt/ForecastDialog";
 import {
   listClients,
@@ -13,8 +14,9 @@ import {
   previsaoCliente,
   valorAPagar,
 } from "@/lib/pt-clients";
-import { listPaymentsByMonth, mesRef } from "@/lib/pt-payments";
+import { listPaymentsByMonth, mesRef, shiftMes } from "@/lib/pt-payments";
 import { listTrainingsByMonth } from "@/lib/pt-trainings";
+import { daysSince, deltaPct, fmtDelta, whatsappLink } from "@/lib/analytics-shared";
 
 export const Route = createFileRoute("/_authenticated/pt/")({
   head: () => ({ meta: [{ title: "Dashboard · PT" }] }),
@@ -28,6 +30,7 @@ function DashboardPage() {
   const now = new Date();
   const proxMes = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const ymAtual = mesRef(now);
+  const ymAnterior = shiftMes(ymAtual, -1);
   const queryClient = useQueryClient();
   const [forecastOpen, setForecastOpen] = useState(false);
 
@@ -38,6 +41,10 @@ function DashboardPage() {
   const { data: payments = [] } = useQuery({
     queryKey: ["pt_payments", ymAtual],
     queryFn: () => listPaymentsByMonth(ymAtual),
+  });
+  const { data: paymentsPrev = [] } = useQuery({
+    queryKey: ["pt_payments", ymAnterior],
+    queryFn: () => listPaymentsByMonth(ymAnterior),
   });
   const { data: trainings = [] } = useQuery({
     queryKey: ["pt_trainings_month", ymAtual],
@@ -55,9 +62,26 @@ function DashboardPage() {
   const totalDescontos = comDesconto.reduce((s, c) => s + Number(c.desconto_afiliado || 0), 0);
 
   const recebido = payments.reduce((s, p) => s + Number(p.valor_pt ?? p.valor_pago), 0);
+  const recebidoPrev = paymentsPrev.reduce((s, p) => s + Number(p.valor_pt ?? p.valor_pago), 0);
+  const deltaRecebido = deltaPct(recebido, recebidoPrev);
+
   const pagosIds = new Set(payments.map((p) => p.client_id));
   const emFalta = ativos.filter((c) => !pagosIds.has(c.id));
   const falta = emFalta.reduce((s, c) => s + valorAPagar(c), 0);
+
+  // Dias em atraso: a partir do dia 5 do mês contamos atraso para mensalidades
+  const hoje = now.getDate();
+  const diasAtraso = Math.max(0, hoje - 5);
+
+  // Clientes sem treino há ≥14 dias
+  const semTreino = ativos
+    .map((c) => {
+      const ultimo = (c as unknown as { ultimo_treino_em: string | null }).ultimo_treino_em;
+      const dias = daysSince(ultimo);
+      return { c, dias, ultimo };
+    })
+    .filter((r) => r.dias !== null && r.dias >= 14)
+    .sort((a, b) => (b.dias ?? 0) - (a.dias ?? 0));
 
   if (isLoading) {
     return (
@@ -73,9 +97,23 @@ function DashboardPage() {
       <Card className="relative overflow-hidden p-6 bg-surface border-border">
         <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
         <div className="relative">
-          <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-medium">
-            {mesNome(now)}
-          </p>
+          <div className="flex items-baseline justify-between">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground font-medium">
+              {mesNome(now)}
+            </p>
+            {deltaRecebido !== null && (
+              <span className={`text-[10px] font-mono inline-flex items-center gap-1 ${
+                deltaRecebido > 0
+                  ? "text-[var(--color-success,#5a8a5a)]"
+                  : deltaRecebido < 0
+                    ? "text-destructive"
+                    : "text-muted-foreground"
+              }`}>
+                {deltaRecebido >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                {fmtDelta(deltaRecebido)} vs mês anterior
+              </span>
+            )}
+          </div>
           <div className="flex items-baseline gap-2 mt-3">
             <span className="font-display text-5xl text-foreground font-semibold tracking-tight privacy-blur">{fmtEUR(recebido)}</span>
           </div>
@@ -119,6 +157,81 @@ function DashboardPage() {
         clients={ativos}
         onSaved={() => queryClient.invalidateQueries({ queryKey: ["pt_clients"] })}
       />
+
+      {/* Em falta com WhatsApp + atraso */}
+      {emFalta.length > 0 && diasAtraso > 0 && (
+        <Card className="p-4 bg-surface border-border">
+          <p className="text-sm font-semibold flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-4 h-4 text-destructive" />
+            Por receber
+            <Badge variant="outline" className="text-[10px] ml-1 gap-1 px-1.5 py-0">
+              <Clock className="w-2.5 h-2.5" /> {diasAtraso}d atraso
+            </Badge>
+          </p>
+          <ul className="space-y-1.5">
+            {emFalta.slice(0, 5).map((c) => {
+              const valor = valorAPagar(c);
+              const wa = whatsappLink(
+                c.telefone,
+                `Olá ${c.nome}! Lembrete amigável do PT — mensalidade ${mesNome(now)} (${fmtEUR(valor)}). Obrigado! 💪`,
+              );
+              return (
+                <li key={c.id} className="flex items-center gap-2 text-sm py-1">
+                  <span className="flex-1 truncate">{c.nome}</span>
+                  <span className="font-mono text-xs text-primary privacy-blur">{fmtEUR(valor)}</span>
+                  {wa && (
+                    <a
+                      href={wa}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#25D366]/15 text-[#25D366] hover:bg-[#25D366]/25 transition-colors"
+                      aria-label="Lembrar via WhatsApp"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
+
+      {/* Sem treino há X dias */}
+      {semTreino.length > 0 && (
+        <Card className="p-4 bg-surface border-[var(--color-warning,#c9893a)]/30">
+          <p className="text-sm font-semibold flex items-center gap-2 mb-3">
+            <Dumbbell className="w-4 h-4 text-[var(--color-warning,#c9893a)]" />
+            Sem treino há +14 dias ({semTreino.length})
+          </p>
+          <ul className="space-y-1.5">
+            {semTreino.slice(0, 5).map(({ c, dias }) => {
+              const wa = whatsappLink(
+                c.telefone,
+                `Olá ${c.nome}! Há ${dias} dias que não treinamos. Quando podemos marcar próxima sessão? 💪`,
+              );
+              return (
+                <li key={c.id} className="flex items-center gap-2 text-sm py-1">
+                  <span className="flex-1 truncate">{c.nome}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">{dias}d</span>
+                  {wa && (
+                    <a
+                      href={wa}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#25D366]/15 text-[#25D366] hover:bg-[#25D366]/25 transition-colors"
+                      aria-label="Contactar via WhatsApp"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-2.5">
