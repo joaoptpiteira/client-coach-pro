@@ -91,6 +91,7 @@ export function ClientFormDialog({ open, onOpenChange, client, onSaved, defaultS
         forecast_notas: client.forecast_notas ?? "",
         treinos_pagos: String(client.treinos_pagos ?? 0),
         treinos_dados: String(client.treinos_dados ?? 0),
+        motivo_saida: (client as unknown as { motivo_saida: string | null }).motivo_saida ?? "",
       });
     } else {
       setForm(empty(defaultStatus));
