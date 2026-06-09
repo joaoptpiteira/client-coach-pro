@@ -221,6 +221,14 @@ export function ClientFormDialog({ open, onOpenChange, client, onSaved, defaultS
             </Select>
           </Field>
 
+          {form.status === "antigo" && (
+            <Field label="Motivo de saída">
+              <Textarea rows={2} value={form.motivo_saida}
+                onChange={(e) => set("motivo_saida", e.target.value)}
+                placeholder="Ex: financeiro, mudança de cidade, sem disponibilidade…" />
+            </Field>
+          )}
+
           <Field label="Nome">
             <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
           </Field>
