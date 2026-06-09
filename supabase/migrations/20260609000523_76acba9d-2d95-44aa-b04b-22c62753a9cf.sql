@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.pt_trainings_touch_last() FROM PUBLIC, anon, authenticated;
