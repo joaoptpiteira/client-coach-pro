@@ -258,18 +258,26 @@ export function ClientFormDialog({ open, onOpenChange, client, onSaved, defaultS
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Frequência">
-                  <Select value={form.frequencia_semanal} onValueChange={(v) => set("frequencia_semanal", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1x / semana</SelectItem>
-                      <SelectItem value="2">2x / semana</SelectItem>
-                      <SelectItem value="3">3x / semana</SelectItem>
-                      <SelectItem value="4">4x / semana</SelectItem>
-                      <SelectItem value="5">5x / semana</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
+                {form.service_type === "pack" ? (
+                  <Field label="Nº treinos do pack">
+                    <Input type="number" inputMode="numeric" min={1} step={1}
+                      value={form.treinos_pagos}
+                      onChange={(e) => set("treinos_pagos", e.target.value)} />
+                  </Field>
+                ) : (
+                  <Field label="Frequência">
+                    <Select value={form.frequencia_semanal} onValueChange={(v) => set("frequencia_semanal", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1x / semana</SelectItem>
+                        <SelectItem value="2">2x / semana</SelectItem>
+                        <SelectItem value="3">3x / semana</SelectItem>
+                        <SelectItem value="4">4x / semana</SelectItem>
+                        <SelectItem value="5">5x / semana</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
               </div>
 
               <Field label="Valor total acordado (€)">
