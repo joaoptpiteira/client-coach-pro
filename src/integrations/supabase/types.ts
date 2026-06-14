@@ -570,6 +570,45 @@ export type Database = {
           },
         ]
       }
+      wc26_stickers: {
+        Row: {
+          created_at: string
+          id: string
+          is_special: boolean
+          label: string
+          number: number
+          owned: number
+          section: string
+          team: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_special?: boolean
+          label: string
+          number: number
+          owned?: number
+          section: string
+          team?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_special?: boolean
+          label?: string
+          number?: number
+          owned?: number
+          section?: string
+          team?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
