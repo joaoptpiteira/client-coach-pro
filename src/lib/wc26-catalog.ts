@@ -1,8 +1,8 @@
 // Catálogo base do álbum Panini FIFA World Cup 26™.
 // Estrutura do álbum:
 //   FWC 1–20      → 20 cromos especiais de abertura / história
-//   Grupos A–L    → 48 equipas × 22 cromos (escudo + foto equipa + 20 jogadores)
-// Total: 20 + 1056 = 1076.
+//   Grupos A–L    → 48 equipas × 20 cromos (escudo + foto equipa + 18 jogadores)
+// Total: 20 + 960 = 980.
 //
 // Os códigos das equipas (MEX, CAN, USA, …) seguem o padrão FIFA/Panini.
 // Os jogadores ficam como "MEX 1 … MEX 20" — editáveis a partir do álbum
@@ -138,12 +138,12 @@ export function buildDefaultCatalog(): CatalogEntry[] {
     for (const t of teams) {
       const sectionName = `Grupo ${g}`;
       const teamName = `${t.code} — ${t.name}`;
-      // Ordem por equipa (22 cromos):
+      // Ordem por equipa (20 cromos):
       //   1       → Escudo
       //   2–12    → Jogadores 1–11
       //   13      → Foto de equipa
-      //   14–22   → Jogadores 12–20
-      for (let i = 1; i <= 22; i++) {
+      //   14–20   → Jogadores 12–18
+      for (let i = 1; i <= 20; i++) {
         let label: string;
         let is_special = false;
         if (i === 1) {
