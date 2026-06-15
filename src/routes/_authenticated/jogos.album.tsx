@@ -636,12 +636,14 @@ function StickerCard({
   onInc,
   onDec,
   onEdit,
+  showContext = false,
 }: {
   sticker: Sticker;
   onToggle: () => void;
   onInc: () => void;
   onDec: () => void;
   onEdit: () => void;
+  showContext?: boolean;
 }) {
   const owned = s.owned >= 1;
   const dup = s.owned > 1;
@@ -676,6 +678,11 @@ function StickerCard({
       >
         {s.label}
       </button>
+      {showContext && (
+        <p className="text-[9px] text-muted-foreground truncate">
+          {s.team ?? s.section}
+        </p>
+      )}
 
       <div className="flex items-center justify-between gap-1 mt-1">
         <button
