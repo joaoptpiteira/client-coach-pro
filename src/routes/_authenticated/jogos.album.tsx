@@ -60,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/jogos/album")({
   component: AlbumPage,
 });
 
-type StatusFilter = "all" | "owned" | "missing" | "duplicates";
+type StickerView = "overview" | "section" | "team";
 
 function AlbumPage() {
   const { user } = useAuth();
@@ -68,9 +68,9 @@ function AlbumPage() {
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [search, setSearch] = useState("");
-  const [section, setSection] = useState<string>("all");
-  const [team, setTeam] = useState<string>("all");
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [section, setSection] = useState<string | null>(null);
+  const [team, setTeam] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [editing, setEditing] = useState<Sticker | null>(null);
   const [renamingTeam, setRenamingTeam] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState<null | "reset" | "wipe">(null);
@@ -114,33 +114,65 @@ function AlbumPage() {
       .map((sec) => ({ section: sec, ...map.get(sec)! }));
   }, [stickers]);
 
-  const teamsBySection = useMemo(() => {
-    if (section === "all") return [];
-    const set = new Set<string>();
+  const teamStats = useMemo(() => {
+    if (!section) return [];
+    const map = new Map<string, { total: number; owned: number }>();
     for (const s of stickers) {
-      if (s.section === section && s.team) set.add(s.team);
+      if (s.section !== section) continue;
+      const key = s.team ?? "—";
+      const cur = map.get(key) ?? { total: 0, owned: 0 };
+      cur.total += 1;
+      if (s.owned >= 1) cur.owned += 1;
+      map.set(key, cur);
     }
-    return Array.from(set).sort();
+    return Array.from(map.entries())
+      .map(([t, v]) => ({ team: t, ...v }))
+      .sort((a, b) => a.team.localeCompare(b.team));
   }, [stickers, section]);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+  const view: StickerView = team ? "team" : section ? "section" : "overview";
+
+  const searchQ = search.trim().toLowerCase();
+  const isSearching = searchQ.length > 0;
+
+  const searchResults = useMemo(() => {
+    if (!isSearching) return [];
     return stickers.filter((s) => {
-      if (section !== "all" && s.section !== section) return false;
-      if (team !== "all" && s.team !== team) return false;
-      if (status === "owned" && s.owned < 1) return false;
-      if (status === "missing" && s.owned >= 1) return false;
-      if (status === "duplicates" && s.owned < 2) return false;
-      if (q) {
-        if (
-          !s.label.toLowerCase().includes(q) &&
-          !String(s.number).includes(q) &&
-          !(s.team?.toLowerCase().includes(q) ?? false)
-        ) return false;
+      if (
+        s.label.toLowerCase().includes(searchQ) ||
+        String(s.number).includes(searchQ) ||
+        (s.team?.toLowerCase().includes(searchQ) ?? false)
+      ) {
+        return true;
       }
-      return true;
-    });
-  }, [stickers, section, team, status, search]);
+      return false;
+    }).slice(0, 200);
+  }, [stickers, searchQ, isSearching]);
+
+  const teamStickers = useMemo(() => {
+    if (!team || !section) return [];
+    return stickers
+      .filter((s) => s.section === section && s.team === team)
+      .filter((s) => {
+        if (statusFilter === "owned") return s.owned >= 1;
+        if (statusFilter === "missing") return s.owned < 1;
+        if (statusFilter === "duplicates") return s.owned >= 2;
+        return true;
+      });
+  }, [stickers, section, team, statusFilter]);
+
+  const sectionSpecials = useMemo(() => {
+    // For "Especiais" section (no teams): show all stickers directly
+    if (!section || section !== "Especiais") return [];
+    return stickers
+      .filter((s) => s.section === section)
+      .filter((s) => {
+        if (statusFilter === "owned") return s.owned >= 1;
+        if (statusFilter === "missing") return s.owned < 1;
+        if (statusFilter === "duplicates") return s.owned >= 2;
+        return true;
+      });
+  }, [stickers, section, statusFilter]);
 
   const missingNumbers = useMemo(
     () => stickers.filter((s) => s.owned < 1).map((s) => s.number).join(", "),
@@ -210,19 +242,12 @@ function AlbumPage() {
   }
 
   function copyMissing() {
-    if (!missingNumbers) {
-      toast.info("Não faltam cromos 🎉");
-      return;
-    }
+    if (!missingNumbers) { toast.info("Não faltam cromos 🎉"); return; }
     navigator.clipboard.writeText(missingNumbers);
-    toast.success("Faltas copiadas para a área de transferência");
+    toast.success("Faltas copiadas");
   }
-
   function copyDuplicates() {
-    if (!duplicatesList) {
-      toast.info("Sem repetidos");
-      return;
-    }
+    if (!duplicatesList) { toast.info("Sem repetidos"); return; }
     navigator.clipboard.writeText(duplicatesList);
     toast.success("Repetidos copiados");
   }
@@ -241,8 +266,8 @@ function AlbumPage() {
             Inicia o teu álbum
           </h2>
           <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-            Vamos criar 1020 cromos: Torneio, 48 equipas em 12 grupos e Lendas.
-            Podes renomear equipas e cromos depois.
+            Vamos criar 980 cromos oficiais Panini: 9 especiais, 11 lendas e 48 equipas
+            distribuídas pelos Grupos A–L.
           </p>
           <Button onClick={handleSeed} disabled={seeding} className="mt-5">
             {seeding ? "A criar…" : "Criar álbum World Cup 26"}
@@ -254,172 +279,263 @@ function AlbumPage() {
 
   return (
     <main className="px-5 pb-24 space-y-5">
-      {/* Stats principais */}
-      <div className="bg-surface border border-border rounded-2xl p-5">
-        <div className="flex items-baseline justify-between">
-          <p className="text-[9px] uppercase tracking-[0.32em] text-primary/80">
-            Completion
-          </p>
-          <p className="text-xs text-muted-foreground tabular-nums">
-            {stats.owned}/{stats.total}
-          </p>
-        </div>
-        <div className="flex items-end gap-2 mt-2">
-          <span className="font-display text-5xl font-semibold tracking-tight tabular-nums">
-            {stats.pct.toFixed(1)}
-          </span>
-          <span className="text-2xl text-muted-foreground mb-1.5">%</span>
-        </div>
-        <Progress value={stats.pct} className="mt-3 h-2" />
-        <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-          <Stat label="Tenho" value={stats.owned} accent="text-emerald-500" />
-          <Stat label="Faltam" value={stats.missing} accent="text-amber-500" />
-          <Stat label="Repetidos" value={stats.duplicates} accent="text-sky-500" />
-        </div>
-        <div className="flex gap-2 mt-3">
-          <Button variant="outline" size="sm" className="flex-1" onClick={copyMissing}>
-            <Copy className="w-3.5 h-3.5" /> Copiar faltas
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1" onClick={copyDuplicates}>
-            <Copy className="w-3.5 h-3.5" /> Copiar repetidos
-          </Button>
-        </div>
-      </div>
-
-      {/* Secções */}
-      <div className="bg-surface border border-border rounded-2xl p-5">
-        <p className="text-[9px] uppercase tracking-[0.32em] text-muted-foreground mb-3">
-          Progresso por secção
-        </p>
-        <div className="space-y-2.5">
-          {sectionStats.map((ss) => {
-            const pct = ss.total ? (ss.owned / ss.total) * 100 : 0;
-            return (
-              <button
-                key={ss.section}
-                onClick={() => {
-                  setSection(ss.section);
-                  setTeam("all");
-                  setStatus("all");
-                }}
-                className="w-full text-left"
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium">{ss.section}</span>
-                  <span className="tabular-nums text-muted-foreground">
-                    {ss.owned}/{ss.total} · {pct.toFixed(0)}%
-                  </span>
-                </div>
-                <Progress value={pct} className="h-1.5 mt-1" />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Filtros */}
-      <div className="space-y-2">
+      {/* Pesquisa global persistente */}
+      <div className="sticky top-0 z-20 -mx-5 px-5 pt-2 pb-3 bg-background/95 backdrop-blur border-b border-border/40">
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Procurar por número, nome ou equipa…"
+            placeholder="Procurar cromo: nº, nome, equipa…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-9 pr-9"
           />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md hover:bg-surface flex items-center justify-center"
+              aria-label="Limpar"
+            >
+              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          )}
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Select
-            value={section}
-            onValueChange={(v) => {
-              setSection(v);
-              setTeam("all");
-            }}
-          >
-            <SelectTrigger><SelectValue placeholder="Secção" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as secções</SelectItem>
-              {SECTIONS_ORDER.map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="owned">Tenho</SelectItem>
-              <SelectItem value="missing">Faltam</SelectItem>
-              <SelectItem value="duplicates">Repetidos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {teamsBySection.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Select value={team} onValueChange={setTeam}>
-              <SelectTrigger><SelectValue placeholder="Equipa" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as equipas</SelectItem>
-                {teamsBySection.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {team !== "all" && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setRenamingTeam(team)}
-                aria-label="Renomear equipa"
-              >
-                <Pencil className="w-4 h-4" />
-              </Button>
+        {/* Breadcrumb */}
+        {!isSearching && (section || team) && (
+          <div className="flex items-center gap-1 mt-2 text-xs">
+            <button
+              onClick={() => { setSection(null); setTeam(null); setStatusFilter("all"); }}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Álbum
+            </button>
+            {section && (
+              <>
+                <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                <button
+                  onClick={() => { setTeam(null); setStatusFilter("all"); }}
+                  className={team ? "text-muted-foreground hover:text-foreground" : "font-medium"}
+                >
+                  {section}
+                </button>
+              </>
+            )}
+            {team && (
+              <>
+                <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                <span className="font-medium truncate">{team}</span>
+              </>
             )}
           </div>
         )}
-        <p className="text-[10px] text-muted-foreground text-right">
-          {filtered.length} cromo{filtered.length === 1 ? "" : "s"}
-        </p>
       </div>
 
-      {/* Grelha de cromos */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-        {filtered.map((s) => (
-          <StickerCard
-            key={s.id}
-            sticker={s}
-            onToggle={() => setOwned(s, s.owned >= 1 ? 0 : 1)}
-            onInc={() => setOwned(s, s.owned + 1)}
-            onDec={() => setOwned(s, s.owned - 1)}
-            onEdit={() => setEditing(s)}
-          />
-        ))}
-        {filtered.length === 0 && (
-          <p className="col-span-full text-center text-xs text-muted-foreground py-8">
-            Sem cromos a mostrar com estes filtros.
+      {isSearching ? (
+        <>
+          <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">
+            {searchResults.length} resultado{searchResults.length === 1 ? "" : "s"}
+            {searchResults.length === 200 && " (limite)"}
           </p>
-        )}
-      </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {searchResults.map((s) => (
+              <StickerCard
+                key={s.id}
+                sticker={s}
+                showContext
+                onToggle={() => setOwned(s, s.owned >= 1 ? 0 : 1)}
+                onInc={() => setOwned(s, s.owned + 1)}
+                onDec={() => setOwned(s, s.owned - 1)}
+                onEdit={() => setEditing(s)}
+              />
+            ))}
+            {searchResults.length === 0 && (
+              <p className="col-span-full text-center text-xs text-muted-foreground py-8">
+                Nada encontrado.
+              </p>
+            )}
+          </div>
+        </>
+      ) : view === "overview" ? (
+        <>
+          {/* Stats principais */}
+          <div className="bg-surface border border-border rounded-2xl p-5">
+            <div className="flex items-baseline justify-between">
+              <p className="text-[9px] uppercase tracking-[0.32em] text-primary/80">Completion</p>
+              <p className="text-xs text-muted-foreground tabular-nums">
+                {stats.owned}/{stats.total}
+              </p>
+            </div>
+            <div className="flex items-end gap-2 mt-2">
+              <span className="font-display text-5xl font-semibold tracking-tight tabular-nums">
+                {stats.pct.toFixed(1)}
+              </span>
+              <span className="text-2xl text-muted-foreground mb-1.5">%</span>
+            </div>
+            <Progress value={stats.pct} className="mt-3 h-2" />
+            <div className="grid grid-cols-3 gap-2 mt-4 text-center">
+              <Stat label="Tenho" value={stats.owned} accent="text-emerald-500" />
+              <Stat label="Faltam" value={stats.missing} accent="text-amber-500" />
+              <Stat label="Repetidos" value={stats.duplicates} accent="text-sky-500" />
+            </div>
+            <div className="flex gap-2 mt-3">
+              <Button variant="outline" size="sm" className="flex-1" onClick={copyMissing}>
+                <Copy className="w-3.5 h-3.5" /> Copiar faltas
+              </Button>
+              <Button variant="outline" size="sm" className="flex-1" onClick={copyDuplicates}>
+                <Copy className="w-3.5 h-3.5" /> Copiar repetidos
+              </Button>
+            </div>
+          </div>
 
-      {/* Acções perigosas */}
-      <div className="pt-6 border-t border-border flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1"
-          onClick={() => setConfirmReset("reset")}
-        >
-          <RotateCcw className="w-3.5 h-3.5" /> Repor a zero
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1 text-destructive hover:text-destructive"
-          onClick={() => setConfirmReset("wipe")}
-        >
-          <Trash2 className="w-3.5 h-3.5" /> Apagar álbum
-        </Button>
-      </div>
+          {/* Lista de secções (drill-down) */}
+          <div className="space-y-2">
+            <p className="text-[9px] uppercase tracking-[0.32em] text-muted-foreground px-1">
+              Secções
+            </p>
+            {sectionStats.map((ss) => {
+              const pct = ss.total ? (ss.owned / ss.total) * 100 : 0;
+              const done = ss.owned === ss.total;
+              return (
+                <button
+                  key={ss.section}
+                  onClick={() => { setSection(ss.section); setTeam(null); }}
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-left hover:border-primary/40 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{ss.section}</span>
+                        {done && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Progress value={pct} className="h-1.5 flex-1" />
+                        <span className="text-[10px] tabular-nums text-muted-foreground shrink-0">
+                          {ss.owned}/{ss.total}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Acções perigosas */}
+          <div className="pt-6 border-t border-border flex gap-2">
+            <Button variant="outline" size="sm" className="flex-1" onClick={() => setConfirmReset("reset")}>
+              <RotateCcw className="w-3.5 h-3.5" /> Repor a zero
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              className="flex-1 text-destructive hover:text-destructive"
+              onClick={() => setConfirmReset("wipe")}
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Apagar álbum
+            </Button>
+          </div>
+        </>
+      ) : view === "section" && section === "Especiais" ? (
+        <>
+          <StatusTabs value={statusFilter} onChange={setStatusFilter} />
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {sectionSpecials.map((s) => (
+              <StickerCard
+                key={s.id}
+                sticker={s}
+                onToggle={() => setOwned(s, s.owned >= 1 ? 0 : 1)}
+                onInc={() => setOwned(s, s.owned + 1)}
+                onDec={() => setOwned(s, s.owned - 1)}
+                onEdit={() => setEditing(s)}
+              />
+            ))}
+          </div>
+        </>
+      ) : view === "section" ? (
+        <>
+          {/* Lista de equipas do grupo */}
+          <div className="space-y-2">
+            {teamStats.map((ts) => {
+              const pct = ts.total ? (ts.owned / ts.total) * 100 : 0;
+              const done = ts.owned === ts.total;
+              return (
+                <button
+                  key={ts.team}
+                  onClick={() => { setTeam(ts.team); setStatusFilter("all"); }}
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-left hover:border-primary/40 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{ts.team}</span>
+                        {done && <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Progress value={pct} className="h-1.5 flex-1" />
+                        <span className="text-[10px] tabular-nums text-muted-foreground shrink-0">
+                          {ts.owned}/{ts.total}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Vista de equipa: stats + filtro estado + grelha */}
+          {(() => {
+            const all = stickers.filter((s) => s.section === section && s.team === team);
+            const owned = all.filter((s) => s.owned >= 1).length;
+            const pct = all.length ? (owned / all.length) * 100 : 0;
+            return (
+              <div className="bg-surface border border-border rounded-2xl p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[9px] uppercase tracking-[0.32em] text-primary/80">Equipa</p>
+                    <p className="font-display text-xl font-semibold tracking-tight mt-0.5">{team}</p>
+                  </div>
+                  <Button
+                    variant="ghost" size="icon"
+                    onClick={() => team && setRenamingTeam(team)}
+                    aria-label="Renomear"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Progress value={pct} className="h-1.5 flex-1" />
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {owned}/{all.length} · {pct.toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
+          <StatusTabs value={statusFilter} onChange={setStatusFilter} />
+
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {teamStickers.map((s) => (
+              <StickerCard
+                key={s.id}
+                sticker={s}
+                onToggle={() => setOwned(s, s.owned >= 1 ? 0 : 1)}
+                onInc={() => setOwned(s, s.owned + 1)}
+                onDec={() => setOwned(s, s.owned - 1)}
+                onEdit={() => setEditing(s)}
+              />
+            ))}
+            {teamStickers.length === 0 && (
+              <p className="col-span-full text-center text-xs text-muted-foreground py-8">
+                Sem cromos para este filtro.
+              </p>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Editar cromo */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
@@ -428,18 +544,11 @@ function AlbumPage() {
             <DialogTitle>Cromo #{editing?.number}</DialogTitle>
           </DialogHeader>
           {editing && (
-            <EditStickerForm
-              sticker={editing}
-              onSaved={async () => {
-                setEditing(null);
-                await refresh();
-              }}
-            />
+            <EditStickerForm sticker={editing} onSaved={async () => { setEditing(null); await refresh(); }} />
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Renomear equipa em massa */}
       <Dialog open={!!renamingTeam} onOpenChange={(o) => !o && setRenamingTeam(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -481,6 +590,35 @@ function AlbumPage() {
     </main>
   );
 }
+
+function StatusTabs({
+  value, onChange,
+}: { value: StatusFilter; onChange: (v: StatusFilter) => void }) {
+  const tabs: { v: StatusFilter; label: string }[] = [
+    { v: "all", label: "Todos" },
+    { v: "missing", label: "Faltam" },
+    { v: "owned", label: "Tenho" },
+    { v: "duplicates", label: "Repetidos" },
+  ];
+  return (
+    <div className="grid grid-cols-4 gap-1 bg-surface border border-border rounded-xl p-1">
+      {tabs.map((t) => (
+        <button
+          key={t.v}
+          onClick={() => onChange(t.v)}
+          className={`text-[11px] py-1.5 rounded-lg transition-colors ${
+            value === t.v
+              ? "bg-primary text-primary-foreground font-medium"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 
 function Stat({ label, value, accent }: { label: string; value: number; accent: string }) {
   return (
