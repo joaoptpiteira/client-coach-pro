@@ -60,6 +60,7 @@ export const Route = createFileRoute("/_authenticated/jogos/album")({
   component: AlbumPage,
 });
 
+type StatusFilter = "all" | "owned" | "missing" | "duplicates";
 type StickerView = "overview" | "section" | "team";
 
 function AlbumPage() {
