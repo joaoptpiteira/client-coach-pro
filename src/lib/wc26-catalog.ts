@@ -160,10 +160,8 @@ export function buildDefaultCatalog(): CatalogEntry[] {
           is_special = true;
         } else if (i === 13) {
           label = `${t.code} — Foto de equipa`;
-        } else if (i >= 2 && i <= 12) {
-          label = `${t.code} ${i - 1}`;
         } else {
-          label = `${t.code} ${i - 2}`;
+          label = `${t.code} ${i}`;
         }
         out.push({
           number: n++,
