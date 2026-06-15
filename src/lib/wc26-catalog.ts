@@ -147,30 +147,30 @@ export function buildDefaultCatalog(): CatalogEntry[] {
     for (const t of teams) {
       const sectionName = `Grupo ${g}`;
       const teamName = `${t.code} — ${t.name}`;
-      // 1) Escudo
-      out.push({
-        number: n++,
-        section: sectionName,
-        team: teamName,
-        label: `${t.code} — Escudo`,
-        is_special: true,
-      });
-      // 2) Foto de equipa
-      out.push({
-        number: n++,
-        section: sectionName,
-        team: teamName,
-        label: `${t.code} — Foto de equipa`,
-        is_special: false,
-      });
-      // 3–20) 18 jogadores
-      for (let p = 1; p <= 18; p++) {
+      // Ordem oficial por equipa (20 cromos):
+      //   1       → Escudo
+      //   2–12    → Jogadores 1–11
+      //   13      → Foto de equipa
+      //   14–20   → Jogadores 12–18
+      for (let i = 1; i <= 20; i++) {
+        let label: string;
+        let is_special = false;
+        if (i === 1) {
+          label = `${t.code} — Escudo`;
+          is_special = true;
+        } else if (i === 13) {
+          label = `${t.code} — Foto de equipa`;
+        } else if (i >= 2 && i <= 12) {
+          label = `${t.code} ${i - 1}`;
+        } else {
+          label = `${t.code} ${i - 2}`;
+        }
         out.push({
           number: n++,
           section: sectionName,
           team: teamName,
-          label: `${t.code} ${p}`,
-          is_special: false,
+          label,
+          is_special,
         });
       }
     }
