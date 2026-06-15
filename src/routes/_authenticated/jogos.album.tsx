@@ -58,8 +58,14 @@ import {
 import { SECTIONS_ORDER } from "@/lib/wc26-catalog";
 import { exportCatalogCsv, exportCatalogPdf } from "@/lib/album-export";
 
+type AlbumSearch = { section?: string; team?: string };
+
 export const Route = createFileRoute("/_authenticated/jogos/album")({
   head: () => ({ meta: [{ title: "Álbum World Cup 26" }] }),
+  validateSearch: (s: Record<string, unknown>): AlbumSearch => ({
+    section: typeof s.section === "string" ? s.section : undefined,
+    team: typeof s.team === "string" ? s.team : undefined,
+  }),
   component: AlbumPage,
 });
 
@@ -68,12 +74,25 @@ type StickerView = "overview" | "section" | "team";
 
 function AlbumPage() {
   const { user } = useAuth();
+  const navigate = useNavigate({ from: "/jogos/album" });
+  const { section: sectionParam, team: teamParam } = Route.useSearch();
+  const section = sectionParam ?? null;
+  const team = teamParam ?? null;
+
+  function setSection(next: string | null) {
+    navigate({ search: () => (next ? { section: next } : {}), replace: false });
+  }
+  function setTeam(next: string | null) {
+    navigate({
+      search: (prev) => ({ section: prev.section, ...(next ? { team: next } : {}) }),
+      replace: false,
+    });
+  }
+
   const [stickers, setStickers] = useState<Sticker[]>([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [search, setSearch] = useState("");
-  const [section, setSection] = useState<string | null>(null);
-  const [team, setTeam] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [editing, setEditing] = useState<Sticker | null>(null);
   const [renamingTeam, setRenamingTeam] = useState<string | null>(null);
