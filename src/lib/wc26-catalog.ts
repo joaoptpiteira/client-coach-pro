@@ -52,77 +52,78 @@ type TeamDef = { code: string; name: string };
 const GROUPS: Record<string, TeamDef[]> = {
   A: [
     { code: "MEX", name: "México" },
-    { code: "POL", name: "Polónia" },
-    { code: "MAR", name: "Marrocos" },
-    { code: "NZL", name: "Nova Zelândia" },
+    { code: "KOR", name: "Coreia do Sul" },
+    { code: "CZE", name: "República Checa" },
+    { code: "RSA", name: "África do Sul" },
   ],
   B: [
+    { code: "SUI", name: "Suíça" },
     { code: "CAN", name: "Canadá" },
-    { code: "ECU", name: "Equador" },
-    { code: "AUT", name: "Áustria" },
-    { code: "UZB", name: "Usbequistão" },
+    { code: "QAT", name: "Catar" },
+    { code: "BIH", name: "Bósnia e Herzegovina" },
   ],
   C: [
-    { code: "USA", name: "Estados Unidos" },
-    { code: "URU", name: "Uruguai" },
-    { code: "EGY", name: "Egito" },
-    { code: "JOR", name: "Jordânia" },
-  ],
-  D: [
-    { code: "ESP", name: "Espanha" },
-    { code: "COL", name: "Colômbia" },
-    { code: "SEN", name: "Senegal" },
-    { code: "QAT", name: "Catar" },
-  ],
-  E: [
-    { code: "ARG", name: "Argentina" },
-    { code: "JPN", name: "Japão" },
-    { code: "CIV", name: "Costa do Marfim" },
-    { code: "CUR", name: "Curaçao" },
-  ],
-  F: [
-    { code: "FRA", name: "França" },
-    { code: "CRO", name: "Croácia" },
-    { code: "TUN", name: "Tunísia" },
+    { code: "SCO", name: "Escócia" },
+    { code: "MAR", name: "Marrocos" },
+    { code: "BRA", name: "Brasil" },
     { code: "HAI", name: "Haiti" },
   ],
-  G: [
-    { code: "ENG", name: "Inglaterra" },
-    { code: "SUI", name: "Suíça" },
-    { code: "ALG", name: "Argélia" },
-    { code: "PAN", name: "Panamá" },
-  ],
-  H: [
-    { code: "BRA", name: "Brasil" },
-    { code: "KOR", name: "Coreia do Sul" },
-    { code: "GHA", name: "Gana" },
+  D: [
+    { code: "USA", name: "Estados Unidos" },
+    { code: "AUS", name: "Austrália" },
+    { code: "TUR", name: "Turquia" },
     { code: "PAR", name: "Paraguai" },
   ],
-  I: [
-    { code: "POR", name: "Portugal" },
-    { code: "AUS", name: "Austrália" },
-    { code: "CMR", name: "Camarões" },
+  E: [
+    { code: "GER", name: "Alemanha" },
+    { code: "CIV", name: "Costa do Marfim" },
+    { code: "ECU", name: "Equador" },
+    { code: "CUW", name: "Curaçau" },
+  ],
+  F: [
+    { code: "SWE", name: "Suécia" },
+    { code: "JPN", name: "Japão" },
+    { code: "NED", name: "Países Baixos" },
+    { code: "TUN", name: "Tunísia" },
+  ],
+  G: [
+    { code: "BEL", name: "Bélgica" },
+    { code: "EGY", name: "Egito" },
+    { code: "IRN", name: "Irão" },
+    { code: "NZL", name: "Nova Zelândia" },
+  ],
+  H: [
+    { code: "ESP", name: "Espanha" },
+    { code: "URU", name: "Uruguai" },
+    { code: "CPV", name: "Cabo Verde" },
     { code: "KSA", name: "Arábia Saudita" },
   ],
-  J: [
-    { code: "GER", name: "Alemanha" },
+  I: [
+    { code: "FRA", name: "França" },
     { code: "NOR", name: "Noruega" },
-    { code: "NGA", name: "Nigéria" },
-    { code: "CRC", name: "Costa Rica" },
+    { code: "SEN", name: "Senegal" },
+    { code: "IRQ", name: "Iraque" },
+  ],
+  J: [
+    { code: "AUT", name: "Áustria" },
+    { code: "ARG", name: "Argentina" },
+    { code: "ALG", name: "Argélia" },
+    { code: "JOR", name: "Jordânia" },
   ],
   K: [
-    { code: "NED", name: "Países Baixos" },
-    { code: "SCO", name: "Escócia" },
-    { code: "RSA", name: "África do Sul" },
-    { code: "IRN", name: "Irão" },
+    { code: "POR", name: "Portugal" },
+    { code: "COL", name: "Colômbia" },
+    { code: "COD", name: "RD Congo" },
+    { code: "UZB", name: "Usbequistão" },
   ],
   L: [
-    { code: "BEL", name: "Bélgica" },
-    { code: "DEN", name: "Dinamarca" },
-    { code: "CPV", name: "Cabo Verde" },
-    { code: "JAM", name: "Jamaica" },
+    { code: "CRO", name: "Croácia" },
+    { code: "ENG", name: "Inglaterra" },
+    { code: "GHA", name: "Gana" },
+    { code: "PAN", name: "Panamá" },
   ],
 };
+
 
 export const GROUP_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
