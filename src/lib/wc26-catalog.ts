@@ -144,23 +144,12 @@ export function buildDefaultCatalog(): CatalogEntry[] {
       //   13      → Foto de equipa
       //   14–20   → Jogadores 12–18
       for (let i = 1; i <= 20; i++) {
-        let label: string;
-        let is_special = false;
-        if (i === 1) {
-          label = `${t.code} — Escudo`;
-          is_special = true;
-        } else if (i === 13) {
-          label = `${t.code} — Foto de equipa`;
-        } else {
-          const playerNumber = i < 13 ? i - 1 : i - 2;
-          label = `${t.code} ${playerNumber}`;
-        }
         out.push({
           number: n++,
           section: sectionName,
           team: teamName,
-          label,
-          is_special,
+          label: `${t.code} ${i}`,
+          is_special: false,
         });
       }
     }
